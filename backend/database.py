@@ -11,21 +11,26 @@ load_dotenv()
 # We expect a NEON_DATABASE_URL in the .env file. 
 # For now, we fallback to a local sqlite db if not provided for testing purposes.
 import urllib.parse
+import ssl
 url = os.getenv('NEON_DATABASE_URL', 'sqlite:///./sql_app.db')
+connect_args = {}
 if url.startswith('postgresql://'):
     url = url.replace('postgresql://', 'postgresql+pg8000://', 1)
-    # pg8000 doesn't accept sslmode/channel_binding kwargs from the URL string
     parsed = urllib.parse.urlparse(url)
     url = urllib.parse.urlunparse(parsed._replace(query=''))
+    # Neon requires SSL, pg8000 needs an explicit ssl_context
+    connect_args['ssl_context'] = ssl.create_default_context()
+    
 SQLALCHEMY_DATABASE_URL = url
 
-# Neon/Postgres specific arguments
-connect_args = {}
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args=connect_args
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args=connect_args,
+    pool_pre_ping=True,  # Automatically tests connection before using it
+    pool_recycle=300     # Recycle connections older than 5 minutes
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -37,5 +42,6 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 
