@@ -44,6 +44,11 @@ export default function Home() {
 
   const handleExtractText = async () => {
     if (!file) return;
+    // If text is already extracted for this document, just switch to the tab
+    if (currentDocumentId && currentText) {
+      setActiveTab('text');
+      return;
+    }
     setIsUploading(true);
     try {
       const data = await uploadDocument(file);
@@ -110,17 +115,17 @@ export default function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full opacity-10 blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-6 py-16">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-16">
         {/* Header */}
         <header className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-6">
             <Sparkles size={14} />
             <span>Powered by Gemini 2.0 Flash Lite</span>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-4">
             Document Summary Assistant
           </h1>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
+          <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto px-4">
             Upload any PDF or image. Extract text instantly. Generate AI-powered summaries at any depth.
           </p>
         </header>
@@ -134,7 +139,7 @@ export default function Home() {
         )}
 
         {/* Input Panel */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-8 hover:border-indigo-500/40 transition-colors shadow-xl">
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 md:p-5 md:p-8 mb-8 hover:border-indigo-500/40 transition-colors shadow-xl">
           
           {/* Drop Zone */}
           <div
@@ -142,7 +147,7 @@ export default function Home() {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all mb-6 ${
+            className={`border-2 border-dashed rounded-xl p-6 md:p-10 text-center cursor-pointer transition-all mb-6 ${
               isDragging
                 ? "border-indigo-400 bg-indigo-500/10"
                 : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
@@ -179,11 +184,11 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={handleExtractText}
-                    disabled={isUploading || isSummarizing}
-                    className="w-full bg-white/5 border border-white/10 hover:bg-white/10 disabled:bg-slate-800 disabled:border-transparent disabled:text-slate-500 text-white font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                    disabled={isUploading || isSummarizing || (!!currentText && !!currentDocumentId)}
+                    className="w-full bg-white/5 border border-white/10 hover:bg-white/10 disabled:bg-slate-800 disabled:border-transparent disabled:text-slate-500 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
                   >
                     {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                    {isUploading ? "Extracting..." : "Extract Text"}
+                    {isUploading ? "Extracting..." : (currentText && currentDocumentId) ? "Text Extracted" : "Extract Text"}
                   </button>
                   <button
                     onClick={handleSummarizeClick}
@@ -266,7 +271,7 @@ export default function Home() {
             </div>
 
             {/* Tab Content */}
-            <div className="p-8">
+            <div className="p-5 md:p-8">
               {activeTab === 'summary' && (
                 <div className="min-h-[300px]">
                   {currentSummary ? (
