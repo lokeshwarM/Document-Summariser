@@ -54,3 +54,48 @@ def generate_summary(text: str, length: str = "medium") -> str:
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
 
+
+import base64
+
+def perform_ocr(image_bytes: bytes) -> str:
+    """Extracts text from an image using Gemini Vision."""
+    session = requests.Session()
+    retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GOOGLE_API_KEY,
+    }
+
+    # Encode image to base64
+    b64_img = base64.b64encode(image_bytes).decode('utf-8')
+
+    payload = {
+        "contents": [{
+            "parts": [
+                {"text": "Please extract all the text from this image exactly as written. Do not add any extra commentary."},
+                {
+                    "inlineData": {
+                        "mimeType": "image/jpeg",
+                        "data": b64_img
+                    }
+                }
+            ]
+        }]
+    }
+
+    try:
+        response = session.post(GEMINI_URL, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise Exception("Gemini returned no candidates for OCR.")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            raise Exception("Gemini returned empty parts for OCR.")
+        return parts[0].get("text", "").strip()
+    except Exception as e:
+        raise Exception(f"Gemini OCR failed: {str(e)}")

@@ -1,8 +1,8 @@
-import pypdf
-import pytesseract
+﻿import pypdf
 from PIL import Image
 import io
 import asyncio
+from ai import perform_ocr
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
     """Extracts text from a PDF file using pypdf."""
@@ -20,10 +20,17 @@ async def extract_text_from_pdf(file_bytes: bytes) -> str:
         raise Exception(f"Failed to parse PDF: {str(e)}")
 
 async def extract_text_from_image(file_bytes: bytes) -> str:
-    """Extracts text from an Image file using Tesseract OCR asynchronously."""
+    """Extracts text from an Image file using Gemini OCR asynchronously."""
     def _ocr():
+        # Convert to JPEG bytes to ensure compatibility and reduce size
         image = Image.open(io.BytesIO(file_bytes))
-        return pytesseract.image_to_string(image).strip()
+        if image.mode in ('RGBA', 'P'):
+            image = image.convert('RGB')
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG', quality=85)
+        
+        return perform_ocr(img_byte_arr.getvalue())
+        
     try:
         return await asyncio.to_thread(_ocr)
     except Exception as e:
