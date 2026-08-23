@@ -2,7 +2,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
-from .extraction import extract_text_from_pdf, extract_text_from_image
+from extraction import extract_text_from_pdf, extract_text_from_image
 
 app = FastAPI(title="Document Summary Assistant API", version="1.0.0")
 
@@ -52,7 +52,7 @@ async def upload_document(file: UploadFile = File(...)):
 
 # pyrefly: ignore [missing-import]
 from pydantic import BaseModel
-from .ai import generate_summary
+from ai import generate_summary
 
 class SummaryRequest(BaseModel):
     text: str
