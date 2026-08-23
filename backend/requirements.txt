@@ -1,9 +1,11 @@
 fastapi==0.110.0
 uvicorn==0.27.1
 python-multipart==0.0.9
-PyMuPDF==1.23.26
+pypdf==4.1.0
 pytesseract==0.3.10
 Pillow==10.2.0
 python-dotenv==1.0.1
 SQLAlchemy==2.0.28
 psycopg2-binary==2.9.9
+langchain==0.1.13
+langchain-google-genai==1.0.1
