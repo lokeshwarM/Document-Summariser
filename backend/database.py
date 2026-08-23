@@ -1,4 +1,4 @@
-# pyrefly: ignore [missing-import]
+﻿# pyrefly: ignore [missing-import]
 from sqlalchemy import create_engine
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -10,7 +10,14 @@ load_dotenv()
 
 # We expect a NEON_DATABASE_URL in the .env file. 
 # For now, we fallback to a local sqlite db if not provided for testing purposes.
-SQLALCHEMY_DATABASE_URL = os.getenv("NEON_DATABASE_URL", "sqlite:///./sql_app.db")
+import urllib.parse
+url = os.getenv('NEON_DATABASE_URL', 'sqlite:///./sql_app.db')
+if url.startswith('postgresql://'):
+    url = url.replace('postgresql://', 'postgresql+pg8000://', 1)
+    # pg8000 doesn't accept sslmode/channel_binding kwargs from the URL string
+    parsed = urllib.parse.urlparse(url)
+    url = urllib.parse.urlunparse(parsed._replace(query=''))
+SQLALCHEMY_DATABASE_URL = url
 
 # Neon/Postgres specific arguments
 connect_args = {}
@@ -30,3 +37,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
