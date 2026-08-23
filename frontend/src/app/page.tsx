@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { uploadDocument, summarizeDocument } from "@/lib/api";
 import { FileText, Loader2, Sparkles, Upload, ClipboardList, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function Home() {
   const {
