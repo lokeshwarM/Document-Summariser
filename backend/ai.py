@@ -1,4 +1,4 @@
-import os
+﻿import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
 SUMMARY_PROMPTS = {
     "short": "Summarize the following document in 3-5 bullet points focusing only on the most critical takeaways:\n\n{text}",
@@ -53,3 +53,4 @@ def generate_summary(text: str, length: str = "medium") -> str:
         raise Exception(f"Gemini API error {response.status_code}: {response.text}")
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
+
