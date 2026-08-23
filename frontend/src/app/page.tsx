@@ -230,8 +230,14 @@ export default function Home() {
                 <span className="ml-auto text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">{summaryLength}</span>
               )}
             </div>
-            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {currentSummary || <span className="text-slate-600 italic">No summary generated yet. Generate one above.</span>}
+            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed">
+              {currentSummary ? (
+                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-headings:text-slate-200">
+                  <ReactMarkdown>{currentSummary}</ReactMarkdown>
+                </div>
+              ) : (
+                <span className="text-slate-600 italic">No summary generated yet. Generate one above.</span>
+              )}
             </div>
           </div>
         </div>
