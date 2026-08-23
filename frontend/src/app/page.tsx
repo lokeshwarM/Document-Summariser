@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { useStore } from "@/store/useStore";
@@ -6,7 +6,20 @@ import { uploadDocument, summarizeDocument } from "@/lib/api";
 import { FileText, Loader2, Sparkles, Upload, ClipboardList, ChevronDown } from "lucide-react";
 
 export default function Home() {
-  const { currentDocumentId, currentText, currentSummary, isUploading, isSummarizing, error, setDocumentData, setSummary, setIsUploading, setIsSummarizing, setError } = useStore();
+  const {
+    currentDocumentId,
+    currentText,
+    currentSummary,
+    isUploading,
+    isSummarizing,
+    error,
+    setDocumentData,
+    setSummary,
+    setIsUploading,
+    setIsSummarizing,
+    setError,
+  } = useStore();
+
   const [file, setFile] = useState<File | null>(null);
   const [summaryLength, setSummaryLength] = useState<string>("medium");
   const [isDragging, setIsDragging] = useState(false);
@@ -21,8 +34,11 @@ export default function Home() {
     e.preventDefault();
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
-    if (dropped) handleFile(dropped);
-  }, []);
+    if (dropped) {
+      setFile(dropped);
+      setError(null);
+    }
+  }, [setError]);
 
   const handleUpload = async () => {
     if (!file) return;
@@ -65,7 +81,7 @@ export default function Home() {
         <header className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-6">
             <Sparkles size={14} />
-            <span>Powered by Gemini 3.1 Flash Lite</span>
+            <span>Powered by Gemini 2.0 Flash Lite</span>
           </div>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-4">
             Document Summary Assistant
@@ -77,8 +93,9 @@ export default function Home() {
 
         {/* Error Banner */}
         {error && (
-          <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm">
-            ⚠ {error}
+          <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm flex items-center gap-2">
+            <span>&#9888;</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -200,7 +217,7 @@ export default function Home() {
                 <span className="ml-auto text-xs text-slate-500">{currentText.length.toLocaleString()} chars</span>
               )}
             </div>
-            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap scrollbar-thin">
+            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
               {currentText || <span className="text-slate-600 italic">No text extracted yet. Upload a document above.</span>}
             </div>
           </div>
@@ -213,7 +230,7 @@ export default function Home() {
                 <span className="ml-auto text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">{summaryLength}</span>
               )}
             </div>
-            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap scrollbar-thin">
+            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
               {currentSummary || <span className="text-slate-600 italic">No summary generated yet. Generate one above.</span>}
             </div>
           </div>
