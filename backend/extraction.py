@@ -3,19 +3,15 @@ from PIL import Image
 import io
 import asyncio
 from ai import perform_ocr
-
+import re
 
 def clean_extracted_text(text: str) -> str:
     """Removes weird single line breaks to form proper paragraphs."""
-    import re
     # Replace single line breaks with spaces, but keep double line breaks (paragraphs)
-    # Also strip excessive whitespace
-    text = re.sub(r'(?<!
-)
-(?!
-)', ' ', text)
+    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+    # Strip excessive whitespace
     text = re.sub(r' +', ' ', text)
-    return clean_extracted_text(text)
+    return text.strip()
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
     """Extracts text from a PDF file using pypdf."""
