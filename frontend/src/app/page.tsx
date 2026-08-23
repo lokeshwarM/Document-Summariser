@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { useStore } from "@/store/useStore";
@@ -78,7 +78,7 @@ export default function Home() {
         {/* Error Banner */}
         {error && (
           <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm">
-            ? {error}
+            ⚠ {error}
           </div>
         )}
 
@@ -88,7 +88,7 @@ export default function Home() {
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-indigo-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                <Upload size){16} className="text-indigo-400" />
+                <Upload size={16} className="text-indigo-400" />
               </div>
               <h2 className="text-lg font-semibold">Upload Document</h2>
             </div>
@@ -105,7 +105,7 @@ export default function Home() {
                   : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
               }`}
             >
-              <FileText className="mx-auto mb-3 text-slate-400" size){32} />
+              <FileText className="mx-auto mb-3 text-slate-400" size={32} />
               {file ? (
                 <div>
                   <p className="font-medium text-indigo-300 text-sm">{file.name}</p>
@@ -142,7 +142,7 @@ export default function Home() {
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center">
-                <Sparkles size){16} className="text-violet-400" />
+                <Sparkles size={16} className="text-violet-400" />
               </div>
               <h2 className="text-lg font-semibold">Generate Summary</h2>
             </div>
@@ -151,7 +151,7 @@ export default function Home() {
             <div className="mb-5">
               <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Summary Depth</label>
               <div className="grid grid-cols-3 gap-2">
-                {
+                {[
                   { key: "short", label: "Short", desc: "3-5 bullets" },
                   { key: "medium", label: "Medium", desc: "Comprehensive" },
                   { key: "long", label: "Detailed", desc: "Section-by-section" },
@@ -169,8 +169,7 @@ export default function Home() {
                     <div className="text-sm font-medium">{opt.label}</div>
                     <div className="text-xs opacity-60 mt-0.5">{opt.desc}</div>
                   </button>
-                ))
-                }
+                ))}
               </div>
             </div>
 
@@ -183,9 +182,9 @@ export default function Home() {
               {isSummarizing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
               {isSummarizing ? "Summarizing..." : "Summarize Document"}
             </button>
-            '{!currentText && (
+            {!currentText && (
               <p className="text-center text-xs text-slate-500 mt-3 flex items-center justify-center gap-1">
-                <ChevronDown size){12} /> Extract text first to enable summarization
+                <ChevronDown size={12} /> Extract text first to enable summarization
               </p>
             )}
           </div>
@@ -208,7 +207,7 @@ export default function Home() {
 
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size){16} className="text-violet-400" />
+              <Sparkles size={16} className="text-violet-400" />
               <h3 className="font-semibold text-slate-200">AI Summary</h3>
               {currentSummary && (
                 <span className="ml-auto text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">{summaryLength}</span>
@@ -223,4 +222,3 @@ export default function Home() {
     </main>
   );
 }
-
