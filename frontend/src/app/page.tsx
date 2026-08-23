@@ -218,8 +218,14 @@ export default function Home() {
                 <span className="ml-auto text-xs text-slate-500">{currentText.length.toLocaleString()} chars</span>
               )}
             </div>
-            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {currentText || <span className="text-slate-600 italic">No text extracted yet. Upload a document above.</span>}
+            <div className="h-72 overflow-y-auto text-sm text-slate-300 leading-relaxed">
+              {currentText ? (
+                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed">
+                  <ReactMarkdown>{currentText}</ReactMarkdown>
+                </div>
+              ) : (
+                <span className="text-slate-600 italic">No text extracted yet. Upload a document above.</span>
+              )}
             </div>
           </div>
 
