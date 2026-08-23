@@ -56,10 +56,33 @@ export default function Home() {
   };
 
   const handleSummarize = async () => {
-    if (!currentText || !currentDocumentId) return;
+    if (!file && !currentDocumentId) return;
+    
+    let docId = currentDocumentId;
+    let docText = currentText;
+
+    if (!docId) {
+      if (!file) return;
+      setIsUploading(true);
+      try {
+        const data = await uploadDocument(file);
+        setDocumentData(data.document_id, data.text);
+        docId = data.document_id;
+        docText = data.text;
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { detail?: string } } };
+        setError(e.response?.data?.detail || "Upload failed. Please try again.");
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    if (!docText || !docId) return;
+
     setIsSummarizing(true);
     try {
-      const data = await summarizeDocument(currentDocumentId, currentText, summaryLength);
+      const data = await summarizeDocument(docId, docText, summaryLength);
       setSummary(data.summary);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -194,17 +217,12 @@ export default function Home() {
             <button
               id="summarize-btn"
               onClick={handleSummarize}
-              disabled={!currentText || !currentDocumentId || isSummarizing}
+              disabled={(!file && !currentText) || isSummarizing || isUploading}
               className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
-              {isSummarizing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {isSummarizing ? "Summarizing..." : "Summarize Document"}
+              {(isSummarizing || isUploading) ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              {isUploading ? "Extracting Text..." : isSummarizing ? "Summarizing..." : "Summarize Document"}
             </button>
-            {!currentText && (
-              <p className="text-center text-xs text-slate-500 mt-3 flex items-center justify-center gap-1">
-                <ChevronDown size={12} /> Extract text first to enable summarization
-              </p>
-            )}
           </div>
         </div>
 

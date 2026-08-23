@@ -4,6 +4,19 @@ import io
 import asyncio
 from ai import perform_ocr
 
+
+def clean_extracted_text(text: str) -> str:
+    """Removes weird single line breaks to form proper paragraphs."""
+    import re
+    # Replace single line breaks with spaces, but keep double line breaks (paragraphs)
+    # Also strip excessive whitespace
+    text = re.sub(r'(?<!
+)
+(?!
+)', ' ', text)
+    text = re.sub(r' +', ' ', text)
+    return clean_extracted_text(text)
+
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
     """Extracts text from a PDF file using pypdf."""
     def _parse():
@@ -13,7 +26,7 @@ async def extract_text_from_pdf(file_bytes: bytes) -> str:
             extracted = page.extract_text()
             if extracted:
                 text += extracted + "\n"
-        return text.strip()
+        return clean_extracted_text(text)
     try:
         return await asyncio.to_thread(_parse)
     except Exception as e:
@@ -29,7 +42,7 @@ async def extract_text_from_image(file_bytes: bytes) -> str:
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG', quality=85)
         
-        return perform_ocr(img_byte_arr.getvalue())
+        return clean_extracted_text(perform_ocr(img_byte_arr.getvalue()))
         
     try:
         return await asyncio.to_thread(_ocr)
