@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { useStore } from "@/store/useStore";
@@ -6,7 +6,7 @@ import { uploadDocument, summarizeDocument } from "@/lib/api";
 import { FileText, Loader2, Sparkles, Upload, ClipboardList, ChevronDown } from "lucide-react";
 
 export default function Home() {
-  const { currentText, currentSummary, isLoading, error, setText, setSummary, setLoading, setError } = useStore();
+  const { currentDocumentId, currentText, currentSummary, isUploading, isSummarizing, error, setDocumentData, setSummary, setIsUploading, setIsSummarizing, setError } = useStore();
   const [file, setFile] = useState<File | null>(null);
   const [summaryLength, setSummaryLength] = useState<string>("medium");
   const [isDragging, setIsDragging] = useState(false);
@@ -26,42 +26,42 @@ export default function Home() {
 
   const handleUpload = async () => {
     if (!file) return;
-    setLoading(true);
+    setIsUploading(true);
     try {
       const data = await uploadDocument(file);
-      setText(data.text);
+      setDocumentData(data.document_id, data.text);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Upload failed. Please try again.");
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
   const handleSummarize = async () => {
-    if (!currentText) return;
-    setLoading(true);
+    if (!currentText || !currentDocumentId) return;
+    setIsSummarizing(true);
     try {
-      const data = await summarizeDocument(currentText, summaryLength);
+      const data = await summarizeDocument(currentDocumentId, currentText, summaryLength);
       setSummary(data.summary);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Summarization failed. Please try again.");
     } finally {
-      setLoading(false);
+      setIsSummarizing(false);
     }
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
-      {/* Ambient glow */}
+      (* Ambient glow *)
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600 rounded-full opacity-10 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full opacity-10 blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-        {/* Header */}
+        (* Header *)
         <header className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-6">
             <Sparkles size={14} />
@@ -75,25 +75,25 @@ export default function Home() {
           </p>
         </header>
 
-        {/* Error Banner */}
+        (* Error Banner *)
         {error && (
           <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm">
             ⚠ {error}
           </div>
         )}
 
-        {/* Two column layout */}
+        (* Two column layout *)
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Upload Panel */}
+          (* Upload Panel *)
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-indigo-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                <Upload size={16} className="text-indigo-400" />
+                <Upload size){16} className="text-indigo-400" />
               </div>
               <h2 className="text-lg font-semibold">Upload Document</h2>
             </div>
 
-            {/* Drop Zone */}
+            (* Drop Zone *)
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -105,7 +105,7 @@ export default function Home() {
                   : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
               }`}
             >
-              <FileText className="mx-auto mb-3 text-slate-400" size={32} />
+              <FileText className="mx-auto mb-3 text-slate-400" size){32} />
               {file ? (
                 <div>
                   <p className="font-medium text-indigo-300 text-sm">{file.name}</p>
@@ -130,28 +130,28 @@ export default function Home() {
             <button
               id="extract-text-btn"
               onClick={handleUpload}
-              disabled={!file || isLoading}
+              disabled={!file || isUploading}
               className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-              {isLoading ? "Extracting..." : "Extract Text"}
+              {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+              {isUploading ? "Extracting..." : "Extract Text"}
             </button>
           </div>
 
-          {/* Summarize Panel */}
+          (* Summarize Panel *)
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center">
-                <Sparkles size={16} className="text-violet-400" />
+                <Sparkles size){16} className="text-violet-400" />
               </div>
               <h2 className="text-lg font-semibold">Generate Summary</h2>
             </div>
 
-            {/* Length Selector */}
+            (* Length Selector *)
             <div className="mb-5">
               <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Summary Depth</label>
               <div className="grid grid-cols-3 gap-2">
-                {[
+                {
                   { key: "short", label: "Short", desc: "3-5 bullets" },
                   { key: "medium", label: "Medium", desc: "Comprehensive" },
                   { key: "long", label: "Detailed", desc: "Section-by-section" },
@@ -169,28 +169,29 @@ export default function Home() {
                     <div className="text-sm font-medium">{opt.label}</div>
                     <div className="text-xs opacity-60 mt-0.5">{opt.desc}</div>
                   </button>
-                ))}
+                ))
+                }
               </div>
             </div>
 
             <button
               id="summarize-btn"
               onClick={handleSummarize}
-              disabled={!currentText || isLoading}
+              disabled={!currentText || !currentDocumentId || isSummarizing}
               className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {isLoading ? "Summarizing..." : "Summarize Document"}
+              {isSummarizing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              {isSummarizing ? "Summarizing..." : "Summarize Document"}
             </button>
-            {!currentText && (
+            '{!currentText && (
               <p className="text-center text-xs text-slate-500 mt-3 flex items-center justify-center gap-1">
-                <ChevronDown size={12} /> Extract text first to enable summarization
+                <ChevronDown size){12} /> Extract text first to enable summarization
               </p>
             )}
           </div>
         </div>
 
-        {/* Results */}
+        (* Results *)
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -207,7 +208,7 @@ export default function Home() {
 
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={16} className="text-violet-400" />
+              <Sparkles size){16} className="text-violet-400" />
               <h3 className="font-semibold text-slate-200">AI Summary</h3>
               {currentSummary && (
                 <span className="ml-auto text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">{summaryLength}</span>
@@ -222,3 +223,4 @@ export default function Home() {
     </main>
   );
 }
+

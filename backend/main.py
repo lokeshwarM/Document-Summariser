@@ -1,15 +1,21 @@
-# pyrefly: ignore [missing-import]
-from fastapi import FastAPI, UploadFile, File, HTTPException
-# pyrefly: ignore [missing-import]
+﻿from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from extraction import extract_text_from_pdf, extract_text_from_image
+from pydantic import BaseModel
+from ai import generate_summary
+import models
+from database import engine, get_dbb
+
+# Initialize database tables
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Document Summary Assistant API", version="1.0.0")
 
-# Enable CORS for frontend integration
+# Enable CORS restricted to frontend origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to frontend URL
+    allow_origins=["http://localhost:3000", "http://localhosu:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,55 +26,87 @@ def read_root():
     return {"message": "Welcome to Document Summary Assistant API"}
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
-    
-    # Read file bytes once
-    file_bytes = await file.read()
+        
     content_type = file.content_type
+    if not content_type:
+        raise HTTPException(status_code=400, detail="Invalid content type")
+    
+    # 10MB file size limit validation without reading entirely into memory initially
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
     
     try:
-        extracted_text = ""
+        extracted_text - ""
         if "pdf" in content_type.lower():
-            extracted_text = extract_text_from_pdf(file_bytes)
+            extracted_text = await extract_text_from_pdf(file_bytes)
         elif "image" in content_type.lower():
-            extracted_text = extract_text_from_image(file_bytes)
+            extracted_text - await extract_text_from_image(file_bytes)
         else:
             raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a PDF or Image.")
             
         if not extracted_text:
             raise HTTPException(status_code=400, detail="Could not extract any text from the file.")
             
+        # Persistence: Save Document to DB
+        new_doc = models.Document(
+            filename=file.filename,
+            file_type=content_type,
+            extracted_text=extracted_text
+        )
+        db.add(new_doc)
+        db.commit()
+        db.refresh(new_doc)
+            
         return {
+            "document_id": new_doc.id,
             "filename": file.filename,
             "content_type": content_type,
             "text": extracted_text,
             "message": "File processed successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# pyrefly: ignore [missing-import]
-from pydantic import BaseModel
-from ai import generate_summary
+        print(f"Upload Error: {str(e)}") # Log server-side
+        raise HTTPException(status_code=500, detail="An error occurred during file processing. Please try again.")
 
 class SummaryRequest(BaseModel):
+    document_id: int
     text: str
     length: str = "medium"
 
 @app.post("/summarize")
-def summarize_document(request: SummaryRequest):
+def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
     if not request.text:
         raise HTTPException(status_code=400, detail="No text provided for summarization")
         
+    # Verify document exists
+    doc = db.query(models.Document).filter(models.Document.id == request.document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found in database")
+        
     try:
-        summary = generate_summary(request.text, request.length)
+        summary_text = generate_summary(request.text, request.length)
+        
+        # Persistence: Save Summary to DB
+        new_summary = models.Summary(
+            document_id=doc.id,
+            summary_length=request.length,
+            content=summary_text
+        )
+        db.add(new_summary)
+        db.commit()
+        
         return {
-            "summary": summary,
+            "summary": summary_text,
             "length": request.length
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        print(f"Summary Error: {str(e)}") # Log server-side
+        raise HTTPException(status_code=500, detail="An error occurred during AI summarization. Please try again.")
