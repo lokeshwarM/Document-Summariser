@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { useStore } from "@/store/useStore";
@@ -54,14 +54,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
-      (* Ambient glow *)
+      {/* Ambient glow */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600 rounded-full opacity-10 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full opacity-10 blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-        (* Header *)
+        {/* Header */}
         <header className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-6">
             <Sparkles size={14} />
@@ -75,16 +75,16 @@ export default function Home() {
           </p>
         </header>
 
-        (* Error Banner *)
+        {/* Error Banner */}
         {error && (
           <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm">
-            ⚠ {error}
+            ? {error}
           </div>
         )}
 
-        (* Two column layout *)
+        {/* Two column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          (* Upload Panel *)
+          {/* Upload Panel */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-indigo-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
@@ -93,7 +93,7 @@ export default function Home() {
               <h2 className="text-lg font-semibold">Upload Document</h2>
             </div>
 
-            (* Drop Zone *)
+            {/* Drop Zone */}
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -138,7 +138,7 @@ export default function Home() {
             </button>
           </div>
 
-          (* Summarize Panel *)
+          {/* Summarize Panel */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-violet-500/40 transition-colors">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center">
@@ -147,7 +147,7 @@ export default function Home() {
               <h2 className="text-lg font-semibold">Generate Summary</h2>
             </div>
 
-            (* Length Selector *)
+            {/* Length Selector */}
             <div className="mb-5">
               <label className="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Summary Depth</label>
               <div className="grid grid-cols-3 gap-2">
@@ -191,7 +191,7 @@ export default function Home() {
           </div>
         </div>
 
-        (* Results *)
+        {/* Results */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
