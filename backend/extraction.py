@@ -1,5 +1,5 @@
 # pyrefly: ignore [missing-import]
-import fitz  # PyMuPDF
+import pypdf
 # pyrefly: ignore [missing-import]
 import pytesseract
 # pyrefly: ignore [missing-import]
@@ -10,15 +10,15 @@ import io
 # Note: For Windows, you might need to specify pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extracts text from a PDF file using PyMuPDF."""
+    """Extracts text from a PDF file using pypdf."""
     text = ""
     try:
         # Open the PDF from bytes
-        pdf_document = fitz.open(stream=file_bytes, filetype="pdf")
-        for page_num in range(len(pdf_document)):
-            page = pdf_document.load_page(page_num)
-            text += page.get_text("text") + "\n"
-        pdf_document.close()
+        pdf_reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+        for page in pdf_reader.pages:
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted + "\n"
         return text.strip()
     except Exception as e:
         raise Exception(f"Failed to parse PDF: {str(e)}")
