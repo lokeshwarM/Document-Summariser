@@ -1,26 +1,31 @@
-// pyrefly: ignore [missing-import]
 import { create } from 'zustand';
 
 interface DocumentState {
+    currentDocumentId: number | null;
     currentText: string | null;
     currentSummary: string | null;
-    isLoading: boolean;
+    isUploading: boolean;
+    isSummarizing: boolean;
     error: string | null;
 
-    setText: (text: string) => void;
+    setDocumentData: (id: number, text: string) => void;
     setSummary: (summary: string) => void;
-    setLoading: (isLoading: boolean) => void;
+    setIsUploading: (isLoading: boolean) => void;
+    setIsSummarizing: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
 }
 
 export const useStore = create<DocumentState>((set) => ({
+    currentDocumentId: null,
     currentText: null,
     currentSummary: null,
-    isLoading: false,
+    isUploading: false,
+    isSummarizing: false,
     error: null,
 
-    setText: (text) => set({ currentText: text, error: null }),
+    setDocumentData: (id, text) => set({ currentDocumentId: id, currentText: text, error: null }),
     setSummary: (summary) => set({ currentSummary: summary, error: null }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error, isLoading: false }),
+    setIsUploading: (isUploading) => set({ isUploading }),
+    setIsSummarizing: (isSummarizing) => set({ isSummarizing }),
+    setError: (error) => set({ error, isUploading: false, isSummarizing: false }),
 }));
