@@ -7,7 +7,7 @@ load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # Use the REST endpoint and model exactly as shown in Google's cURL quickstart
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-latest:generateContent"
 
 SUMMARY_PROMPTS = {
     "short": "Summarize the following document in 3-5 bullet points focusing only on the most critical takeaways:\n\n{text}",
