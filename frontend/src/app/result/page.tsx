@@ -84,14 +84,16 @@ export default function Result() {
     }
   }, [currentDocumentId, router]);
 
+  const hasInitialized = useRef(false);
   useEffect(() => {
-    if (initialDepth && !summaries[initialDepth]) {
-      generateSummary(initialDepth as Depth);
-    }
-    if (initialDepth) {
+    if (initialDepth && !hasInitialized.current) {
+      hasInitialized.current = true;
       setActiveDepth(initialDepth as Depth);
+      if (!summaries[initialDepth]) {
+        generateSummary(initialDepth as Depth);
+      }
     }
-  }, [initialDepth, summaries, generateSummary]);
+  }, [initialDepth, generateSummary]); // Removed summaries so streaming doesn't re-trigger it
 
   useEffect(() => {
     if (chatEndRef.current) {
