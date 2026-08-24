@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from logger import setup_logger
+logger = setup_logger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from extraction import extract_text_from_pdf, extract_text_from_image
@@ -8,7 +10,7 @@ import models
 from database import engine, get_db
 import os
 
-models.logger.info("Initializing database schema..."); Base.metadata.create_all(bind=engine)
+logger.info("Initializing database schema..."); models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Document Summary Assistant API", version="1.0.0")
 
