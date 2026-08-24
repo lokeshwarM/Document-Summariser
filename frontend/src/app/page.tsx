@@ -29,49 +29,44 @@ export default function Home() {
   const handleFile = (selectedFile: File) => {
     setFile(selectedFile);
     setError(null);
-    setIsSelectingDepth(false); // Reset depth selection when a new file is uploaded
+    setIsSelectingDepth(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
-    if (dropped) {
-      handleFile(dropped);
-    }
+    if (dropped) handleFile(dropped);
   };
 
   const handleExtractText = async () => {
     if (!file) return;
-    // If text is already extracted for this document, just switch to the tab
     if (currentDocumentId && currentText) {
-      router.push('/result');
+      router.push("/result");
       return;
     }
     setIsUploading(true);
     try {
       const data = await uploadDocument(file);
       setDocumentData(data.document_id, data.text);
-      router.push('/result');
+      router.push("/result");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      const msg = e.response?.data?.detail || "Upload failed. Please try again."; setError(msg); toast.error(msg);
+      const msg = e.response?.data?.detail || "Upload failed. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleSummarizeClick = () => {
-    setIsSelectingDepth(true);
-  };
+  const handleSummarizeClick = () => setIsSelectingDepth(true);
 
   const executeSummarize = async (depth: string) => {
     if (!file && !currentDocumentId) return;
-    
     let docId = currentDocumentId;
     let docText = currentText;
 
-    // Auto-extract if not already done
     if (!docId) {
       if (!file) return;
       setIsUploading(true);
@@ -82,7 +77,9 @@ export default function Home() {
         docText = data.text;
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
-        const msg = e.response?.data?.detail || "Upload failed. Please try again."; setError(msg); toast.error(msg);
+        const msg = e.response?.data?.detail || "Upload failed. Please try again.";
+        setError(msg);
+        toast.error(msg);
         setIsUploading(false);
         setIsSelectingDepth(false);
         return;
@@ -91,71 +88,99 @@ export default function Home() {
     }
 
     if (!docText || !docId) return;
-
     setIsSummarizing(true);
     try {
       const data = await summarizeDocument(docId, docText, depth);
       setSummary(data.summary);
-      setIsSelectingDepth(false); // Hide the depth selector after success
-      router.push('/result');
+      setIsSelectingDepth(false);
+      router.push("/result");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      const msg = e.response?.data?.detail || "Summarization failed. Please try again."; setError(msg); toast.error(msg);
+      const msg = e.response?.data?.detail || "Summarization failed. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSummarizing(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
-      {/* Ambient glow */}
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
+      style={{ background: "linear-gradient(145deg, #FDF4D2 0%, #f5efd0 40%, #ede8d8 100%)" }}
+    >
+      {/* Subtle decorative blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600 rounded-full opacity-10 blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full opacity-10 blur-3xl" />
+        <div
+          className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, #B0CDE6, transparent)" }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-25 blur-3xl"
+          style={{ background: "radial-gradient(circle, #A290B7, transparent)" }}
+        />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-4 md:py-8">
+      <div className="relative z-10 w-full max-w-xl">
         {/* Header */}
-        <header className="text-center mb-4 md:mb-8">
-          <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-4 md:mb-6">
-            <Sparkles size={14} />
+        <header className="text-center mb-8">
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium mb-5"
+            style={{ background: "rgba(162,144,183,0.15)", color: "#7a6a8a", border: "1px solid rgba(162,144,183,0.3)" }}
+          >
+            <Sparkles size={13} />
             <span>Powered by Gemini 2.0 Flash Lite</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-2 md:mb-4">
-            Document Summary Assistant
+          <h1
+            className="text-4xl md:text-5xl font-bold mb-3 leading-tight"
+            style={{ color: "#946D6D" }}
+          >
+            Document Summary
+            <span style={{ color: "#A290B7" }}> Assistant</span>
           </h1>
-          <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto px-4">
-            Upload any PDF or image. Extract text instantly. Generate AI-powered summaries at any depth.
+          <p className="text-base md:text-lg" style={{ color: "#a08888" }}>
+            Upload a PDF or image. Extract text instantly.
+            <br />Generate AI-powered summaries at any depth.
           </p>
         </header>
 
-
-
-        {/* Input Panel */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 md:p-5 md:p-8 mb-8 hover:border-indigo-500/40 transition-colors shadow-xl">
-          
+        {/* Upload Card */}
+        <div
+          className="rounded-2xl p-6 mb-4 transition-all"
+          style={{
+            background: "rgba(255,255,255,0.65)",
+            backdropFilter: "blur(12px)",
+            border: "1.5px solid rgba(176,205,230,0.5)",
+            boxShadow: "0 8px 32px rgba(148,109,109,0.08), 0 1px 0 rgba(255,255,255,0.8) inset"
+          }}
+        >
           {/* Drop Zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-4 md:p-10 text-center cursor-pointer transition-all mb-2 md:mb-4 ${
-              isDragging
-                ? "border-indigo-400 bg-indigo-500/10"
-                : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
-            }`}
+            className="rounded-xl p-6 text-center cursor-pointer transition-all mb-5"
+            style={{
+              border: `2px dashed ${isDragging ? "#A290B7" : "rgba(176,205,230,0.7)"}`,
+              background: isDragging ? "rgba(162,144,183,0.08)" : "rgba(176,205,230,0.08)",
+            }}
           >
-            <FileText className="mx-auto mb-2 text-slate-400" size={36} />
+            <div
+              className="inline-flex p-3 rounded-full mb-3"
+              style={{ background: "rgba(176,205,230,0.25)" }}
+            >
+              <FileText size={28} style={{ color: "#A290B7" }} />
+            </div>
             {file ? (
               <div>
-                <p className="font-medium text-indigo-300 text-base">{file.name}</p>
-                <p className="text-sm text-slate-500 mt-1">{(file.size / 1024).toFixed(1)} KB</p>
+                <p className="font-semibold text-base" style={{ color: "#946D6D" }}>{file.name}</p>
+                <p className="text-sm mt-1" style={{ color: "#b09898" }}>{(file.size / 1024).toFixed(1)} KB</p>
               </div>
             ) : (
               <div>
-                <p className="text-slate-300 text-base font-medium">Click or drop your file here</p>
-                <p className="text-slate-500 text-sm mt-2">PDF or Image (PNG, JPG)</p>
+                <p className="font-medium text-base" style={{ color: "#946D6D" }}>Click or drop your file here</p>
+                <p className="text-sm mt-1" style={{ color: "#b09898" }}>PDF or Image (PNG, JPG)</p>
               </div>
             )}
             <input
@@ -170,60 +195,87 @@ export default function Home() {
 
           {/* Action Buttons */}
           {(file || currentText) && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-              
+            <div className="animate-in fade-in slide-in-from-top-4 duration-400">
               {!isSelectingDepth ? (
-                /* Primary Actions: Extract & Summarize */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleExtractText}
                     disabled={isUploading || isSummarizing || (!!currentText && !!currentDocumentId)}
-                    className="w-full bg-white/5 border border-white/10 hover:bg-white/10 disabled:bg-slate-800 disabled:border-transparent disabled:text-slate-500 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                    className="w-full font-medium py-3 px-5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+                    style={{
+                      background: (!!currentText && !!currentDocumentId) ? "rgba(176,205,230,0.3)" : "rgba(176,205,230,0.5)",
+                      color: "#5a7a96",
+                      border: "1.5px solid rgba(176,205,230,0.6)",
+                      opacity: (isUploading || isSummarizing) ? 0.6 : 1,
+                      cursor: (!!currentText && !!currentDocumentId) ? "default" : "pointer"
+                    }}
                   >
-                    {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                    {isUploading ? "Extracting..." : (currentText && currentDocumentId) ? "Text Extracted" : "Extract Text"}
+                    {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                    {isUploading ? "Extracting…" : (currentText && currentDocumentId) ? "Text Extracted ✓" : "Extract Text"}
                   </button>
                   <button
                     onClick={handleSummarizeClick}
                     disabled={isUploading || isSummarizing}
-                    className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-400 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-violet-900/20 flex items-center justify-center gap-2"
+                    className="w-full font-semibold py-3 px-5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm text-white"
+                    style={{
+                      background: "linear-gradient(135deg, #A290B7 0%, #8e7ba8 100%)",
+                      boxShadow: "0 4px 15px rgba(162,144,183,0.4)",
+                      opacity: (isUploading || isSummarizing) ? 0.6 : 1,
+                    }}
                   >
-                    <Sparkles size={18} />
+                    <Sparkles size={16} />
                     Summarize
                   </button>
                 </div>
               ) : (
-                /* Depth Selection Options */
-                <div className="bg-black/20 rounded-xl p-6 border border-white/5 animate-in zoom-in-95 duration-200">
-                  <div className="flex items-center justify-between mb-2 md:mb-4">
-                    <h3 className="text-sm font-medium text-slate-300">Select Summary Depth:</h3>
-                    <button 
+                <div
+                  className="rounded-xl p-5 animate-in zoom-in-95 duration-200"
+                  style={{ background: "rgba(176,205,230,0.15)", border: "1.5px solid rgba(176,205,230,0.4)" }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold" style={{ color: "#946D6D" }}>Select Summary Depth</h3>
+                    <button
                       onClick={() => setIsSelectingDepth(false)}
-                      className="text-xs text-slate-500 hover:text-slate-300 underline underline-offset-2"
+                      className="text-xs underline underline-offset-2 transition-colors"
+                      style={{ color: "#b09898" }}
                     >
                       Cancel
                     </button>
                   </div>
-                  
+
                   {isSummarizing || isUploading ? (
-                    <div className="py-8 flex flex-col items-center justify-center gap-3">
-                      <Loader2 size={28} className="animate-spin text-violet-500" />
-                      <span className="text-slate-400 text-sm">{isUploading ? "Extracting Text..." : "Generating Summary..."}</span>
+                    <div className="py-6 flex flex-col items-center justify-center gap-3">
+                      <Loader2 size={26} className="animate-spin" style={{ color: "#A290B7" }} />
+                      <span className="text-sm" style={{ color: "#a08888" }}>
+                        {isUploading ? "Extracting Text…" : "Generating Summary…"}
+                      </span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { key: "short", label: "Short", desc: "3-5 bullets" },
+                        { key: "short", label: "Short", desc: "3–5 bullets" },
                         { key: "medium", label: "Medium", desc: "Comprehensive" },
                         { key: "long", label: "Detailed", desc: "Section-by-section" },
                       ].map((opt) => (
                         <button
                           key={opt.key}
                           onClick={() => executeSummarize(opt.key)}
-                          className="bg-white/5 border border-white/10 hover:border-violet-500/50 hover:bg-violet-500/10 text-slate-300 py-2 rounded-xl transition-all text-center flex flex-col items-center justify-center gap-1 group"
+                          className="rounded-xl py-3 text-center flex flex-col items-center gap-1 transition-all group"
+                          style={{
+                            background: "rgba(255,255,255,0.7)",
+                            border: "1.5px solid rgba(176,205,230,0.5)",
+                          }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLButtonElement).style.background = "rgba(162,144,183,0.15)";
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(162,144,183,0.6)";
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.7)";
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(176,205,230,0.5)";
+                          }}
                         >
-                          <span className="font-semibold text-white group-hover:text-violet-300 transition-colors">{opt.label}</span>
-                          <span className="text-xs text-slate-500 group-hover:text-violet-400/70">{opt.desc}</span>
+                          <span className="font-semibold text-sm" style={{ color: "#946D6D" }}>{opt.label}</span>
+                          <span className="text-xs" style={{ color: "#b09898" }}>{opt.desc}</span>
                         </button>
                       ))}
                     </div>
@@ -234,7 +286,11 @@ export default function Home() {
           )}
         </div>
 
-              </div>
+        {/* Footer hint */}
+        <p className="text-center text-xs" style={{ color: "#c4a8a8" }}>
+          Your document is processed securely and never stored permanently.
+        </p>
+      </div>
     </main>
   );
 }
