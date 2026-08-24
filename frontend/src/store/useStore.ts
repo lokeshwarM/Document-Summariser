@@ -1,10 +1,17 @@
 import { create } from 'zustand';
 
+export interface ChatMessage {
+    role: 'user' | 'model';
+    content: string;
+}
+
 interface DocumentState {
     currentDocumentId: number | null;
     currentText: string | null;
     /** Cached summaries keyed by depth: 'concise' | 'medium' | 'detailed' */
     summaries: Record<string, string>;
+    /** Chat history for the current document */
+    chatHistory: ChatMessage[];
     /** The depth that was used on the home page (first summary) */
     initialDepth: string;
     isUploading: boolean;
@@ -14,6 +21,8 @@ interface DocumentState {
     setDocumentData: (id: number, text: string) => void;
     setSummaryForDepth: (depth: string, summary: string) => void;
     setInitialDepth: (depth: string) => void;
+    addChatMessage: (msg: ChatMessage) => void;
+    clearChatHistory: () => void;
     clearSummaries: () => void;
     setIsUploading: (isLoading: boolean) => void;
     setIsSummarizing: (isLoading: boolean) => void;
@@ -24,6 +33,7 @@ export const useStore = create<DocumentState>((set) => ({
     currentDocumentId: null,
     currentText: null,
     summaries: {},
+    chatHistory: [],
     initialDepth: 'medium',
     isUploading: false,
     isSummarizing: false,
@@ -33,11 +43,14 @@ export const useStore = create<DocumentState>((set) => ({
         currentDocumentId: id,
         currentText: text,
         summaries: {},
+        chatHistory: [],
         error: null,
     }),
     setSummaryForDepth: (depth, summary) =>
         set((state) => ({ summaries: { ...state.summaries, [depth]: summary }, error: null })),
     setInitialDepth: (depth) => set({ initialDepth: depth }),
+    addChatMessage: (msg) => set((state) => ({ chatHistory: [...state.chatHistory, msg] })),
+    clearChatHistory: () => set({ chatHistory: [] }),
     clearSummaries: () => set({ summaries: {} }),
     setIsUploading: (isUploading) => set({ isUploading }),
     setIsSummarizing: (isSummarizing) => set({ isSummarizing }),

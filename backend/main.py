@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from extraction import extract_text_from_pdf, extract_text_from_image
 from pydantic import BaseModel
-from ai import generate_summary
+from ai import generate_summary, chat_with_document\nfrom typing import List
 import models
 from database import engine, get_db
 import os
@@ -108,3 +108,25 @@ def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("An error occurred during AI summarization")
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+\n
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    document_id: int
+    message: str
+    history: List[ChatMessage] = []
+
+@app.post("/chat")
+def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
+    doc = db.query(models.Document).filter(models.Document.id == request.document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    try:
+        history_dicts = [{"role": msg.role, "content": msg.content} for msg in request.history]
+        response_text = chat_with_document(doc.extracted_text, request.message, history_dicts)
+        return {"response": response_text}
+    except Exception as e:
+        logger.exception("An error occurred during chat")
+        raise HTTPException(status_code=500, detail=f"AI Chat Error: {str(e)}")

@@ -8,40 +8,41 @@ import base64
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-# Let's use 2.0 Flash as it's the latest and best at following instructions
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
 SUMMARY_PROMPTS = {
     "concise": (
-        "TASK: Provide a CONCISE summary of the document.\\n"
-        "CONSTRAINTS:\\n"
-        "- MUST be EXACTLY 3-5 short bullet points.\\n"
-        "- NO introduction, NO conversational text, NO conclusion.\\n"
-        "- Just the bullet points.\\n"
-        "- Keep it under 50 words total.\\n\\n"
-        "DOCUMENT TEXT:\\n{text}"
+        "TASK: Provide a CONCISE summary of the document.\n"
+        "CONSTRAINTS:\n"
+        "- MUST be EXACTLY 3-5 short bullet points.\n"
+        "- MUST use bold markdown (`**bold**`) for key terms and entity names.\n"
+        "- NO introduction, NO conversational text, NO conclusion.\n"
+        "- Just the bolded bullet points.\n"
+        "- Keep it under 50 words total.\n\n"
+        "DOCUMENT TEXT:\n{text}"
     ),
     "medium": (
-        "TASK: Provide a MEDIUM, balanced comprehensive summary of the document.\\n"
-        "CONSTRAINTS:\\n"
-        "- MUST include a short Introduction paragraph.\\n"
-        "- MUST include a 'Key Themes' section.\\n"
-        "- MUST include a 'Conclusion' paragraph.\\n"
-        "- Keep it around 200 words.\\n\\n"
-        "DOCUMENT TEXT:\\n{text}"
+        "TASK: Provide a MEDIUM, balanced comprehensive summary of the document.\n"
+        "CONSTRAINTS:\n"
+        "- DO NOT write a wall of text.\n"
+        "- MUST use rich markdown formatting (bullet points, **bold text** for important keywords).\n"
+        "- MUST include a short Introduction paragraph.\n"
+        "- MUST include a 'Key Themes' section utilizing bullet points.\n"
+        "- MUST include a brief 'Conclusion' paragraph.\n"
+        "- Keep it around 200 words.\n\n"
+        "DOCUMENT TEXT:\n{text}"
     ),
     "detailed": (
-        "TASK: Provide a DETAILED, section-by-section exhaustive summary of the document.\\n"
-        "CONSTRAINTS:\\n"
-        "- MUST extract every single important detail, metric, and name.\\n"
-        "- MUST use nested markdown headings (H2, H3).\\n"
-        "- MUST be very long and thorough.\\n\\n"
-        "DOCUMENT TEXT:\\n{text}"
+        "TASK: Provide a DETAILED, section-by-section exhaustive summary of the document.\n"
+        "CONSTRAINTS:\n"
+        "- MUST extract every single important detail, metric, and name.\n"
+        "- MUST use nested markdown headings (H2, H3), bullet points, and **bold text**.\n"
+        "- MUST be very long and thorough.\n\n"
+        "DOCUMENT TEXT:\n{text}"
     )
 }
 
 def generate_summary(text: str, length: str = "medium") -> str:
-    """Generates a summary by calling the Gemini REST API directly."""
     if not text:
         return ""
 
@@ -59,7 +60,6 @@ def generate_summary(text: str, length: str = "medium") -> str:
         "X-goog-api-key": GOOGLE_API_KEY,
     }
 
-    # Use the systemInstruction field for better constraint adherence in Gemini 2.0
     system_instruction = (
         "You are an expert document summarizer. You MUST strictly obey the user's length and format constraints. "
         "Never include conversational filler like 'Here is a summary'."
@@ -91,8 +91,57 @@ def generate_summary(text: str, length: str = "medium") -> str:
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
 
+def chat_with_document(document_text: str, message: str, history: list) -> str:
+    if not document_text:
+        return "Error: No document context."
+
+    session = requests.Session()
+    retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GOOGLE_API_KEY,
+    }
+
+    system_instruction = (
+        "You are an expert document assistant. You MUST answer the user's questions strictly based on the provided document text. "
+        "Use markdown formatting (bolding, lists) to make your answers clear and readable.\n\n"
+        f"--- DOCUMENT TEXT ---\n{document_text[:100000]}\n--- END DOCUMENT TEXT ---"
+    )
+
+    contents = []
+    for msg in history:
+        contents.append({
+            "role": msg.get("role", "user"),
+            "parts": [{"text": msg.get("content", "")}]
+        })
+    
+    contents.append({
+        "role": "user",
+        "parts": [{"text": message}]
+    })
+
+    payload = {
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        },
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.2
+        }
+    }
+
+    try:
+        response = session.post(GEMINI_URL, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        raise Exception(f"Chat failed: {str(e)}")
+
 def perform_ocr(image_bytes: bytes) -> str:
-    """Extracts text from an image using Gemini Vision."""
     session = requests.Session()
     retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
@@ -103,7 +152,6 @@ def perform_ocr(image_bytes: bytes) -> str:
         "X-goog-api-key": GOOGLE_API_KEY,
     }
 
-    # Encode image to base64
     b64_img = base64.b64encode(image_bytes).decode('utf-8')
 
     payload = {

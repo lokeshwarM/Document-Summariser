@@ -22,3 +22,12 @@ export const summarizeDocument = async (document_id: number, text: string, lengt
     return response.data;
 };
 
+
+export const askDocumentQuestion = async (document_id: number, message: string, history: {role: string, content: string}[]) => {
+    const response = await axios.post(`${API_URL}/chat`, {
+        document_id,
+        message,
+        history,
+    });
+    return response.data;
+};
