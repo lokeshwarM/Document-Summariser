@@ -10,6 +10,9 @@ load_dotenv()
 
 # We expect a NEON_DATABASE_URL in the .env file. 
 # For now, we fallback to a local sqlite db if not provided for testing purposes.
+from logger import setup_logger
+
+logger = setup_logger(__name__)
 import urllib.parse
 import ssl
 url = os.getenv('NEON_DATABASE_URL', 'sqlite:///./sql_app.db')
@@ -24,7 +27,7 @@ if url.startswith('postgresql://'):
 SQLALCHEMY_DATABASE_URL = url
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+    connect_args = {"check_same_thread": False}; logger.info("Using local SQLite database")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 

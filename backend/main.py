@@ -7,7 +7,7 @@ from ai import generate_summary
 import models
 from database import engine, get_db
 
-models.Base.metadata.create_all(bind=engine)
+models.logger.info("Initializing database schema..."); Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Document Summary Assistant API", version="1.0.0")
 

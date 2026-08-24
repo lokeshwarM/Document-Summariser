@@ -2,6 +2,9 @@
 from PIL import Image
 import io
 import asyncio
+from logger import setup_logger
+
+logger = setup_logger(__name__)
 from ai import perform_ocr
 import re
 
@@ -26,7 +29,7 @@ async def extract_text_from_pdf(file_bytes: bytes) -> str:
     try:
         return await asyncio.to_thread(_parse)
     except Exception as e:
-        raise Exception(f"Failed to parse PDF: {str(e)}")
+        logger.error(f"PDF Extraction Error: {str(e)}"); raise Exception(f"Failed to parse PDF: {str(e)}")
 
 async def extract_text_from_image(file_bytes: bytes) -> str:
     """Extracts text from an Image file using Gemini OCR asynchronously."""
@@ -43,4 +46,4 @@ async def extract_text_from_image(file_bytes: bytes) -> str:
     try:
         return await asyncio.to_thread(_ocr)
     except Exception as e:
-        raise Exception(f"Failed to perform OCR on image: {str(e)}")
+        logger.error(f"OCR Error: {str(e)}"); raise Exception(f"Failed to perform OCR on image: {str(e)}")

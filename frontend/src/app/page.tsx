@@ -5,6 +5,7 @@ import { useStore } from "@/store/useStore";
 import { uploadDocument, summarizeDocument } from "@/lib/api";
 import { FileText, Loader2, Sparkles, ClipboardList, Upload } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const {
@@ -56,7 +57,7 @@ export default function Home() {
       setActiveTab('text');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setError(e.response?.data?.detail || "Upload failed. Please try again.");
+      const msg = e.response?.data?.detail || "Upload failed. Please try again."; setError(msg); toast.error(msg);
     } finally {
       setIsUploading(false);
     }
@@ -83,7 +84,7 @@ export default function Home() {
         docText = data.text;
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
-        setError(e.response?.data?.detail || "Upload failed. Please try again.");
+        const msg = e.response?.data?.detail || "Upload failed. Please try again."; setError(msg); toast.error(msg);
         setIsUploading(false);
         setIsSelectingDepth(false);
         return;
@@ -101,7 +102,7 @@ export default function Home() {
       setIsSelectingDepth(false); // Hide the depth selector after success
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setError(e.response?.data?.detail || "Summarization failed. Please try again.");
+      const msg = e.response?.data?.detail || "Summarization failed. Please try again."; setError(msg); toast.error(msg);
     } finally {
       setIsSummarizing(false);
     }
@@ -130,13 +131,7 @@ export default function Home() {
           </p>
         </header>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-300 text-sm flex items-center gap-2">
-            <span>&#9888;</span>
-            <span>{error}</span>
-          </div>
-        )}
+
 
         {/* Input Panel */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 md:p-5 md:p-8 mb-8 hover:border-indigo-500/40 transition-colors shadow-xl">
