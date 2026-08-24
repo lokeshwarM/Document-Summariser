@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from extraction import extract_text_from_pdf, extract_text_from_image
 from pydantic import BaseModel
-from ai import generate_summary, chat_with_document\nfrom typing import List
+from ai import generate_summary, chat_with_document
+from typing import List
 import models
 from database import engine, get_db
 import os
@@ -108,7 +109,6 @@ def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("An error occurred during AI summarization")
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
-\n
 class ChatMessage(BaseModel):
     role: str
     content: str
