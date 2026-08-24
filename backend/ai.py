@@ -1,8 +1,9 @@
-﻿import os
+import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from dotenv import load_dotenv
+import base64
 
 load_dotenv()
 
@@ -10,43 +11,35 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
 SUMMARY_PROMPTS = {
-    # Concise: strict 80-120 word bullet-point summary
     "concise": (
-        "You are a precise document summarizer. Your task: summarize the document below in EXACTLY 3 to 5 bullet points. "
-        "Each bullet must be a single, punchy sentence capturing only the most critical insight. "
-        "STRICT RULE: Your entire response must be under 120 words. Do NOT write any introduction or conclusion sentence. "
-        "Start directly with the first bullet point.\n\n"
-        "Document:\n{text}"
+        "You are an executive assistant summarizing a document for a busy CEO. "
+        "Extract ONLY the 3 most critical facts or decisions. "
+        "Format as exactly 3 short bullet points. No introduction, no conclusion. "
+        "Each bullet must be under 15 words.\\n\\n"
+        "Document:\\n{text}"
     ),
-    # Medium: 250-350 word balanced overview
     "medium": (
-        "You are a professional document analyst. Write a balanced summary of the document below. "
-        "Structure it with: a 1-sentence introduction, 3-4 key themes as short paragraphs, and a 1-sentence conclusion. "
-        "STRICT RULE: Your entire response must be between 250 and 350 words. "
-        "Use clear section labels (e.g., **Introduction**, **Key Themes**, **Conclusion**).\n\n"
-        "Document:\n{text}"
+        "You are a professional analyst. Write a balanced overview of this document. "
+        "Provide exactly three sections:\\n"
+        "1. **Core Purpose**: One sentence explaining what this document is.\\n"
+        "2. **Key Themes**: A brief paragraph summarizing the main arguments or points.\\n"
+        "3. **Takeaways**: 3-4 bullet points of important details.\\n\\n"
+        "Document:\\n{text}"
     ),
-    # Detailed: 600+ word comprehensive section-by-section analysis
     "detailed": (
-        "You are a senior research analyst. Write a comprehensive, section-by-section analysis of the document below. "
-        "For every distinct topic or section in the document, write a dedicated heading and at least 2-3 detailed paragraphs. "
-        "Include all key data points, names, dates, and specific details mentioned. "
-        "STRICT RULE: Your response must be AT LEAST 600 words. Do not truncate or skip any section.\n\n"
-        "Document:\n{text}"
+        "You are a meticulous researcher. Your job is to extract EVERY SINGLE piece of useful information from this document. "
+        "Create a comprehensive, exhaustive outline. "
+        "Do not leave out any names, dates, metrics, rules, or specific facts. "
+        "If the document is short, break it down sentence by sentence. "
+        "Use multiple nested markdown headings, bold text for key terms, and extensive bullet points.\\n\\n"
+        "Document:\\n{text}"
     ),
-    # Aliases for backward compatibility
-    "short": (
-        "Summarize the following document in 3-5 bullet points focusing only on the most critical takeaways. "
-        "Keep it under 120 words total:\n\n{text}"
-    ),
-    "long": (
-        "Provide an extremely detailed, section-by-section summary (at least 600 words) of the following document. "
-        "Extract all important data, dates, and names:\n\n{text}"
-    ),
+    "short": "Summarize the following document in 3 short bullet points:\\n\\n{text}",
+    "long": "Provide a comprehensive, section-by-section analysis:\\n\\n{text}",
 }
 
 def generate_summary(text: str, length: str = "medium") -> str:
-    """Generates a summary by calling the Gemini REST API directly."""
+    \"\"\"Generates a summary by calling the Gemini REST API directly.\"\"\"
     if not text:
         return ""
 
@@ -64,8 +57,23 @@ def generate_summary(text: str, length: str = "medium") -> str:
         "X-goog-api-key": GOOGLE_API_KEY,
     }
 
+    # Dynamically set max tokens based on requested length
+    max_tokens = 2048
+    temperature = 0.3
+    
+    if length == "concise" or length == "short":
+        max_tokens = 150
+        temperature = 0.1
+    elif length == "medium":
+        max_tokens = 400
+        temperature = 0.2
+        
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": temperature
+        }
     }
 
     try:
@@ -84,11 +92,8 @@ def generate_summary(text: str, length: str = "medium") -> str:
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
 
-
-import base64
-
 def perform_ocr(image_bytes: bytes) -> str:
-    """Extracts text from an image using Gemini Vision."""
+    \"\"\"Extracts text from an image using Gemini Vision.\"\"\"
     session = requests.Session()
     retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
