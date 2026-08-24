@@ -1,89 +1,124 @@
-﻿# Document Summary Assistant
+<div align="center">
+  <img src="https://via.placeholder.com/1200x300/F5E7C6/FF6D1F.png?text=Document+Summary+Assistant" alt="Document Summary Assistant Banner" width="100%" />
 
-![Banner](https://via.placeholder.com/1200x300.png?text=Document+Summary+Assistant)
+  # Document Summary Assistant
+  
+  **A production-grade, real-time AI document processing platform.**
+  
+  [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+  [![Gemini AI](https://img.shields.io/badge/AI-Gemini_Flash_Lite-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
+  [![PostgreSQL](https://img.shields.io/badge/Database-Neon_Postgres-336791?style=flat-square&logo=postgresql)](https://neon.tech/)
+  [![Clerk](https://img.shields.io/badge/Auth-Clerk_v7-6C47FF?style=flat-square)](https://clerk.com/)
+  
+  [**View Live Application**](https://document-summary-assistant-lovat.vercel.app/) • [**View System Architecture**](#-system-architecture)
 
-Document Summary Assistant is a robust, full-stack application built for high-performance text extraction and AI-powered summarization of PDFs and Images. 
+</div>
 
-This project was built to demonstrate engineering maturity, emphasizing a modern tech stack, scalable architecture, robust error handling, and production-ready CI/CD pipelines.
+---
 
-## 🚀 Key Features
+## 🚀 Overview
 
-* **Multi-Format Extraction:** Upload PDFs or images (PNG/JPEG) seamlessly.
-* **Next-Gen OCR:** Bypasses traditional, error-prone local OCR binaries (like Tesseract) by utilizing the highly robust **Gemini 3.5 Vision API** for pixel-perfect text extraction, even from messy handwriting or complex document layouts.
-* **Intelligent Summarization:** Generates context-aware summaries at varying depths (Short, Medium, Detailed).
-* **Sleek UI/UX:** A responsive, single-column workflow with dynamic tabbed results, built with Next.js and Tailwind CSS.
-* **Enterprise Reliability:** Comprehensive error handling, Python logging, database connection pooling, and continuous integration pipelines.
+While document summarization is a standard AI use case, **productionizing it for scale is not**. 
 
-## 🛠 Tech Stack
+This application was engineered to treat a simple prompt as a rigorous system design exercise. Instead of building a basic wrapper around an LLM, this platform implements **real-time token streaming (SSE)**, **optimistic state caching**, **graceful authentication degradation**, and **zero-downtime CI/CD validation**.
 
-### Frontend
-* **Framework:** Next.js 14 (App Router)
-* **Styling:** Tailwind CSS + Typography (@tailwindcss/typography)
-* **State Management:** Zustand
-* **Icons:** Lucide React
-* **Notifications:** React Hot Toast
+### 🎯 The "Wow Factor" (Why This Stands Out)
 
-### Backend
-* **Framework:** FastAPI
-* **Database:** Serverless PostgreSQL (Neon) via SQLAlchemy + pg8000 (Python-native driver for maximum cross-platform compatibility).
-* **AI Provider:** Google Gemini API (Vision Multimodal + Text endpoints)
-* **Testing:** Pytest + Pytest-Mock
+- **Real-Time Streaming (SSE)**: Eliminates perceived latency. Summaries stream word-by-word onto the screen exactly like ChatGPT, rather than forcing the user to stare at a 10-second loading spinner.
+- **Interactive Document Q&A**: Users aren't limited to static summaries. A persistent contextual chat interface allows users to interrogate the document.
+- **Graceful Authentication Degradation**: 
+  - *Anonymous users* experience zero friction—they can upload, summarize, and chat instantly (state is strictly ephemeral).
+  - *Logged-in users* (via Clerk) gain access to a persistent PostgreSQL-backed Dashboard where their document history and insights are safely stored across sessions.
+- **O(1) State Caching**: Built with Zustand, switching between Summary Depths (Concise, Medium, Detailed) instantly loads cached results without triggering redundant AI API calls, saving token costs and API rate limits.
+- **Bento-Box UI**: Designed with a premium, responsive "Neo-Brutalist" aesthetic featuring micro-interactions and strict accessibility scaling.
 
-## 🧠 Architectural Highlights
+---
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for a deep dive into the system design, including why we chose Gemini Vision over local Tesseract.
+## 🏗️ System Architecture
 
-## 💻 Getting Started
+The application is decoupled into two highly scalable services to separate the heavy compute (AI/Extraction) from the UI layer.
+
+```mermaid
+graph TD
+    Client[Next.js Client] <--> |Zustand State + SSE Stream| Frontend[Next.js 14 App Router]
+    Frontend <--> |Clerk Auth JWT| Auth[Clerk Auth Provider]
+    Frontend <--> |REST / SSE| Backend[FastAPI Backend]
+    
+    Backend --> |Vision / Text Prompts| AI[Google Gemini API]
+    Backend --> |pg8000 Connection Pool| DB[(Neon PostgreSQL)]
+    
+    subgraph Data Flow
+        AI -.-> |Streamed Tokens| Backend
+        Backend -.-> |Server-Sent Events| Frontend
+    end
+```
+
+### Technical Stack Decisions
+
+1. **Next.js 14 (Frontend)**: Chosen for its App Router, robust middleware routing, and seamless edge-caching capabilities.
+2. **FastAPI (Backend)**: Python was chosen specifically for its superior ecosystem in handling data ingestion and AI streaming capabilities via `StreamingResponse`. 
+3. **Gemini 3.5 Flash Lite**: Selected over local Tesseract OCR. Local OCR is notoriously fragile with handwriting and complex layouts. Gemini Vision API acts as a highly robust, unified extraction and reasoning engine.
+4. **Neon PostgreSQL**: A serverless database that scales to zero, perfectly matching the stateless nature of the Vercel/Render hosting environments.
+
+---
+
+## 💻 Local Setup & Development
 
 ### Prerequisites
 * Node.js (v20+)
 * Python (3.10+)
 * Google Gemini API Key
-* Neon PostgreSQL Database URL (or local SQLite)
 
-### 1. Clone the repository
-`ash
-git clone https://github.com/lokeshwarM/Document-Summariser.git
-cd Document-Summariser
-`
-
-### 2. Backend Setup
-`ash
+### 1. Backend Setup
+```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows use env\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-`
-Create a .env file in the ackend/ directory:
-`env
-GEMINI_API_KEY=your_gemini_api_key
-NEON_DATABASE_URL=postgresql://user:password@host/db
-`
-Start the backend server:
-`ash
+```
+Create a `.env` file in the `backend/` directory:
+```env
+GEMINI_API_KEY=your_gemini_key_here
+NEON_DATABASE_URL=sqlite:///./test.db # Use SQLite for quick local testing
+```
+Start the API:
+```bash
 python -m uvicorn main:app --reload
-`
+```
 
-### 3. Frontend Setup
-`ash
+### 2. Frontend Setup
+```bash
 cd frontend
-npm install
+npm install --legacy-peer-deps
+```
+Create a `.env.local` file in the `frontend/` directory:
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+Start the UI:
+```bash
 npm run dev
-`
-Open http://localhost:3000 in your browser.
+```
 
-## 🧪 Testing
+---
 
-The backend includes a comprehensive pytest suite for the API endpoints and extraction logic.
+## 🧪 Testing & CI/CD
 
-`ash
+This repository enforces strict deployment gates. The GitHub Actions pipeline (`.github/workflows/ci.yml`) automatically executes on every push to `main`:
+1. Pre-compiles and lints the Next.js frontend to prevent hydration/build errors.
+2. Boots a test environment and executes the `pytest` suite against the FastAPI backend.
+3. Only upon full success are deployments pushed to Vercel/Render.
+
+To run tests locally:
+```bash
 cd backend
 pytest test_main.py
-`
+```
 
-## 🔄 CI/CD Pipeline
-
-This project includes a fully configured GitHub Actions workflow (.github/workflows/ci.yml) that automatically runs the backend test suite and verifies the frontend build on every push to the main branch.
-
-## 📝 License
-MIT License
+---
+<div align="center">
+<i>Built to demonstrate engineering maturity, emphasizing architecture, resilience, and UX.</i>
+</div>
