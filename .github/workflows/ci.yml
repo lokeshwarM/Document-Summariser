@@ -26,8 +26,8 @@ jobs:
         cd backend
         pytest test_main.py
       env:
-        GEMINI_API_KEY: \${{ secrets.GEMINI_API_KEY }}\
-        NEON_DATABASE_URL: \${{ secrets.NEON_DATABASE_URL }}\
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
 
   frontend-build:
     runs-on: ubuntu-latest
