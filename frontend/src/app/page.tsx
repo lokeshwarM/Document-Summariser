@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { useStore } from "@/store/useStore";
 import { uploadDocument, summarizeDocument } from "@/lib/api";
 import { FileText, Loader2, Sparkles, ClipboardList, Upload } from "lucide-react";
@@ -14,7 +14,6 @@ export default function Home() {
     currentSummary,
     isUploading,
     isSummarizing,
-    error,
     setDocumentData,
     setSummary,
     setIsUploading,
@@ -34,14 +33,14 @@ export default function Home() {
     setIsSelectingDepth(false); // Reset depth selection when a new file is uploaded
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) {
       handleFile(dropped);
     }
-  }, [setError]);
+  };
 
   const handleExtractText = async () => {
     if (!file) return;
