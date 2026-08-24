@@ -15,7 +15,10 @@ from logger import setup_logger
 logger = setup_logger(__name__)
 import urllib.parse
 import ssl
-url = os.getenv('NEON_DATABASE_URL', 'sqlite:///./sql_app.db')
+url = os.getenv('NEON_DATABASE_URL')
+if not url:
+    url = 'sqlite:///./sql_app.db'
+
 connect_args = {}
 if url.startswith('postgresql://'):
     url = url.replace('postgresql://', 'postgresql+pg8000://', 1)

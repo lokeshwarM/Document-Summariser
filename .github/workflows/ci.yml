@@ -42,7 +42,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd frontend
-        npm ci
+        npm install
     - name: Build and Lint
       run: |
         cd frontend
