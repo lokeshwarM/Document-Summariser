@@ -253,7 +253,7 @@ export default function Home() {
                       </span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {[
                         { key: "concise", label: "Concise", desc: "3–5 bullets" },
                         { key: "medium", label: "Medium", desc: "Comprehensive" },
@@ -262,7 +262,7 @@ export default function Home() {
                         <button
                           key={opt.key}
                           onClick={() => executeSummarize(opt.key)}
-                          className="rounded-xl py-3 text-center flex flex-col items-center gap-1 transition-all"
+                          className="rounded-xl py-3 px-2 text-center flex flex-col items-center gap-1 transition-all"
                           style={{ background: "rgba(255,255,255,0.7)", border: "1.5px solid rgba(176,205,230,0.5)" }}
                           onMouseEnter={e => {
                             (e.currentTarget as HTMLButtonElement).style.background = "rgba(162,144,183,0.15)";

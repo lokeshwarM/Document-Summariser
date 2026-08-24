@@ -70,7 +70,7 @@ export default function ResultPage() {
   const activeSummary = summaries[activeDepth];
 
   return (
-    <main className="min-h-screen p-4 md:p-8 flex flex-col items-center" style={{ background: "linear-gradient(135deg, #FDF4D2 0%, #fcf7e6 100%)" }}>
+    <main className="min-h-screen p-2 sm:p-4 md:p-8 flex flex-col items-center" style={{ background: "linear-gradient(135deg, #FDF4D2 0%, #fcf7e6 100%)" }}>
       <div className="w-full max-w-4xl flex items-center justify-between mb-8">
         <button
           onClick={() => router.push("/")}
@@ -121,7 +121,7 @@ export default function ResultPage() {
         {activeTab === "summary" && (
           <div className="flex flex-col">
             {/* Depth Sub-navigation */}
-            <div className="flex items-center gap-4 p-4 md:px-8 border-b" style={{ borderColor: "rgba(255,255,255,0.5)", background: "rgba(253,244,210,0.3)" }}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 md:px-8 border-b" style={{ borderColor: "rgba(255,255,255,0.5)", background: "rgba(253,244,210,0.3)" }}>
               <span className="text-sm font-medium" style={{ color: "#a89494" }}>Depth:</span>
               <div className="flex flex-wrap gap-2">
                 {DEPTH_OPTIONS.map((opt) => {
@@ -153,10 +153,10 @@ export default function ResultPage() {
               </div>
             </div>
 
-            <div className="p-6 md:p-8">
+            <div className="p-3 sm:p-5 md:p-8">
               {activeSummary ? (
                 <div 
-                  className="min-h-[400px] rounded-xl p-6 md:p-8 relative"
+                  className="min-h-[400px] rounded-xl p-4 sm:p-6 md:p-8 relative"
                   style={{
                     background: "rgba(255,255,255,0.9)",
                     border: "1px solid rgba(162,144,183,0.2)",
@@ -263,10 +263,10 @@ export default function ResultPage() {
 
         {/* Extracted Text Tab Content */}
         {activeTab === "text" && (
-          <div className="p-6 md:p-8">
+          <div className="p-3 sm:p-5 md:p-8">
             {currentText ? (
               <div
-                className="min-h-[400px] rounded-xl p-6 md:p-8"
+                className="min-h-[400px] rounded-xl p-4 sm:p-6 md:p-8"
                 style={{
                   background: "rgba(255,255,255,0.8)",
                   border: "1px solid rgba(176,205,230,0.3)",
