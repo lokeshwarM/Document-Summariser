@@ -8,34 +8,36 @@ import base64
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
+# Let's use 2.0 Flash as it's the latest and best at following instructions
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 SUMMARY_PROMPTS = {
     "concise": (
-        "You are an executive assistant summarizing a document for a busy CEO. "
-        "Extract ONLY the 3 most critical facts or decisions. "
-        "Format as exactly 3 short bullet points. No introduction, no conclusion. "
-        "Each bullet must be under 15 words.\\n\\n"
-        "Document:\\n{text}"
+        "TASK: Provide a CONCISE summary of the document.\\n"
+        "CONSTRAINTS:\\n"
+        "- MUST be EXACTLY 3-5 short bullet points.\\n"
+        "- NO introduction, NO conversational text, NO conclusion.\\n"
+        "- Just the bullet points.\\n"
+        "- Keep it under 50 words total.\\n\\n"
+        "DOCUMENT TEXT:\\n{text}"
     ),
     "medium": (
-        "You are a professional analyst. Write a balanced overview of this document. "
-        "Provide exactly three sections:\\n"
-        "1. **Core Purpose**: One sentence explaining what this document is.\\n"
-        "2. **Key Themes**: A brief paragraph summarizing the main arguments or points.\\n"
-        "3. **Takeaways**: 3-4 bullet points of important details.\\n\\n"
-        "Document:\\n{text}"
+        "TASK: Provide a MEDIUM, balanced comprehensive summary of the document.\\n"
+        "CONSTRAINTS:\\n"
+        "- MUST include a short Introduction paragraph.\\n"
+        "- MUST include a 'Key Themes' section.\\n"
+        "- MUST include a 'Conclusion' paragraph.\\n"
+        "- Keep it around 200 words.\\n\\n"
+        "DOCUMENT TEXT:\\n{text}"
     ),
     "detailed": (
-        "You are a meticulous researcher. Your job is to extract EVERY SINGLE piece of useful information from this document. "
-        "Create a comprehensive, exhaustive outline. "
-        "Do not leave out any names, dates, metrics, rules, or specific facts. "
-        "If the document is short, break it down sentence by sentence. "
-        "Use multiple nested markdown headings, bold text for key terms, and extensive bullet points.\\n\\n"
-        "Document:\\n{text}"
-    ),
-    "short": "Summarize the following document in 3 short bullet points:\\n\\n{text}",
-    "long": "Provide a comprehensive, section-by-section analysis:\\n\\n{text}",
+        "TASK: Provide a DETAILED, section-by-section exhaustive summary of the document.\\n"
+        "CONSTRAINTS:\\n"
+        "- MUST extract every single important detail, metric, and name.\\n"
+        "- MUST use nested markdown headings (H2, H3).\\n"
+        "- MUST be very long and thorough.\\n\\n"
+        "DOCUMENT TEXT:\\n{text}"
+    )
 }
 
 def generate_summary(text: str, length: str = "medium") -> str:
@@ -57,22 +59,19 @@ def generate_summary(text: str, length: str = "medium") -> str:
         "X-goog-api-key": GOOGLE_API_KEY,
     }
 
-    # Dynamically set max tokens based on requested length
-    max_tokens = 2048
-    temperature = 0.3
+    # Use the systemInstruction field for better constraint adherence in Gemini 2.0
+    system_instruction = (
+        "You are an expert document summarizer. You MUST strictly obey the user's length and format constraints. "
+        "Never include conversational filler like 'Here is a summary'."
+    )
     
-    if length == "concise" or length == "short":
-        max_tokens = 150
-        temperature = 0.1
-    elif length == "medium":
-        max_tokens = 400
-        temperature = 0.2
-        
     payload = {
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        },
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": temperature
+            "temperature": 0.1 if length == "concise" else 0.3
         }
     }
 
