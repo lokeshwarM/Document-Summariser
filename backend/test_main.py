@@ -39,7 +39,7 @@ def test_upload_invalid_file_type():
         files={"file": ("test.txt", io.BytesIO(file_content), "text/plain")}
     )
     assert response.status_code == 400
-    assert "Unsupported file type" in response.json()["detail"]
+    assert "Invalid file signature" in response.json()["detail"]
 
 def test_upload_valid_pdf_mocked(mocker):
     # We mock the extraction function so we don't need real OCR or PDF parsers in unit tests
@@ -74,3 +74,24 @@ def test_summarize_mocked(mocker):
     
     assert response.status_code == 200
     assert response.json()["summary"] == "Mock summary"
+
+def test_upload_spoofed_content_type():
+    """Simulate a malicious user trying to upload an executable disguised as a PDF"""
+    file_content = b"MZ\x90\x00\x03\x00\x00\x00\x04\x00\x00\x00\xff\xff\x00\x00\xb8\x00\x00\x00" # Windows EXE magic bytes
+    response = client.post(
+        "/upload",
+        files={"file": ("malicious.pdf", io.BytesIO(file_content), "application/pdf")}
+    )
+    assert response.status_code == 400
+    assert "Invalid file signature" in response.json()["detail"]
+
+def test_upload_file_too_large():
+    """Simulate a file larger than 10MB being rejected"""
+    # Create 11MB of dummy data
+    file_content = b"0" * (11 * 1024 * 1024)
+    response = client.post(
+        "/upload",
+        files={"file": ("toolarge.pdf", io.BytesIO(file_content), "application/pdf")}
+    )
+    assert response.status_code == 413
+    assert "File too large" in response.json()["detail"]

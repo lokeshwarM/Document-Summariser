@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/store/useStore";
 import { useRouter } from "next/navigation";
-import { Sparkles, ClipboardList, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Sparkles, ClipboardList, ArrowLeft, Loader2, CheckCircle2, Copy, Check } from "lucide-react";
 import { summarizeDocument } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
@@ -29,6 +29,7 @@ export default function ResultPage() {
   const [activeDepth, setActiveDepth] = useState<Depth>((initialDepth as Depth) || "medium");
   const [generatingDepth, setGeneratingDepth] = useState<Depth | null>(null);
   const [activeTab, setActiveTab] = useState<"summary" | "text">("summary");
+  const [isCopied, setIsCopied] = useState(false);
 
   const generateSummary = useCallback(async (depth: Depth) => {
     if (!currentDocumentId || !currentText) return;
@@ -43,6 +44,16 @@ export default function ResultPage() {
       setGeneratingDepth(null);
     }
   }, [currentDocumentId, currentText, summaries, setSummaryForDepth]);
+
+  
+  const handleCopy = () => {
+    const textToCopy = activeTab === "summary" ? summaries[activeDepth] : currentText;
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
 
   const handleDepthChange = (depth: Depth) => {
     setActiveDepth(depth);
@@ -358,7 +369,7 @@ export default function ResultPage() {
                     }}
                   >
                     {/* Editor Header */}
-                    <div className="flex items-center gap-3 mb-6 pb-4"
+                    <div className="flex items-center justify-between mb-6 pb-4"
                       style={{ borderBottom: "1px solid rgba(176,205,230,0.3)" }}>
                       <div className="p-2 rounded-lg" style={{ background: "rgba(176,205,230,0.2)" }}>
                         <ClipboardList size={16} style={{ color: "#7aaac8" }} />

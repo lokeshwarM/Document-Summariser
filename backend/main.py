@@ -37,7 +37,19 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     file_bytes = await file.read()
     if len(file_bytes) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
+
+    # Security: Verify magic bytes (file signature) to prevent spoofing
+    header = file_bytes[:8]
+    is_pdf = header.startswith(b'%PDF-')
+    is_jpeg = header.startswith(b'\xff\xd8\xff')
+    is_png = header.startswith(b'\x89PNG\r\n\x1a\n')
+
+    if not (is_pdf or is_jpeg or is_png):
+        logger.warning(f"Malicious upload attempt rejected. Magic bytes: {header}")
+        raise HTTPException(status_code=400, detail="Invalid file signature. File is not a valid PDF or Image.")
+
     try:
+
         extracted_text = ""
         if "pdf" in content_type.lower():
             extracted_text = await extract_text_from_pdf(file_bytes)
@@ -66,7 +78,7 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Upload Error: {str(e)}")
+        logger.exception("An error occurred during file upload")
         raise HTTPException(status_code=500, detail="An error occurred during file processing. Please try again.")
 
 
@@ -94,5 +106,5 @@ def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
         db.commit()
         return {"summary": summary_text, "length": request.length}
     except Exception as e:
-        print(f"Summary Error: {str(e)}")
+        logger.exception("An error occurred during AI summarization")
         raise HTTPException(status_code=500, detail="An error occurred during AI summarization. Please try again.")

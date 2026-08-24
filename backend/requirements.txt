@@ -3,9 +3,9 @@ uvicorn==0.27.1
 python-multipart==0.0.9
 pypdf==4.1.0
 pytesseract==0.3.13
-Pillow
+Pillow==10.2.0
 python-dotenv==1.0.1
 SQLAlchemy>=2.0.35
-pg8000
+pg8000==1.31.1
 
-requests
+requests==2.31.0

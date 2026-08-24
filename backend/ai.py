@@ -39,7 +39,7 @@ SUMMARY_PROMPTS = {
 }
 
 def generate_summary(text: str, length: str = "medium") -> str:
-    \"\"\"Generates a summary by calling the Gemini REST API directly.\"\"\"
+    """Generates a summary by calling the Gemini REST API directly."""
     if not text:
         return ""
 
@@ -93,7 +93,7 @@ def generate_summary(text: str, length: str = "medium") -> str:
         raise Exception(f"Failed to generate summary: {str(e)}")
 
 def perform_ocr(image_bytes: bytes) -> str:
-    \"\"\"Extracts text from an image using Gemini Vision.\"\"\"
+    """Extracts text from an image using Gemini Vision."""
     session = requests.Session()
     retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
