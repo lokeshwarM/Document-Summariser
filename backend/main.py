@@ -107,4 +107,4 @@ def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
         return {"summary": summary_text, "length": request.length}
     except Exception as e:
         logger.exception("An error occurred during AI summarization")
-        raise HTTPException(status_code=500, detail="An error occurred during AI summarization. Please try again.")
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
