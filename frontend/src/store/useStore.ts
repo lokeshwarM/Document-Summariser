@@ -8,11 +8,8 @@ export interface ChatMessage {
 interface DocumentState {
     currentDocumentId: number | null;
     currentText: string | null;
-    /** Cached summaries keyed by depth: 'concise' | 'medium' | 'detailed' */
     summaries: Record<string, string>;
-    /** Chat history for the current document */
     chatHistory: ChatMessage[];
-    /** The depth that was used on the home page (first summary) */
     initialDepth: string;
     isUploading: boolean;
     isSummarizing: boolean;
@@ -20,6 +17,7 @@ interface DocumentState {
 
     setDocumentData: (id: number, text: string) => void;
     setSummaryForDepth: (depth: string, summary: string) => void;
+    appendToSummary: (depth: string, chunk: string) => void;
     setInitialDepth: (depth: string) => void;
     addChatMessage: (msg: ChatMessage) => void;
     clearChatHistory: () => void;
@@ -48,6 +46,13 @@ export const useStore = create<DocumentState>((set) => ({
     }),
     setSummaryForDepth: (depth, summary) =>
         set((state) => ({ summaries: { ...state.summaries, [depth]: summary }, error: null })),
+    appendToSummary: (depth, chunk) =>
+        set((state) => ({
+            summaries: {
+                ...state.summaries,
+                [depth]: (state.summaries[depth] || '') + chunk,
+            }
+        })),
     setInitialDepth: (depth) => set({ initialDepth: depth }),
     addChatMessage: (msg) => set((state) => ({ chatHistory: [...state.chatHistory, msg] })),
     clearChatHistory: () => set({ chatHistory: [] }),

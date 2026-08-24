@@ -1,3 +1,4 @@
+import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <ClerkProvider afterSignOutUrl="/">
       <body
         className={cn(
           geistSans.variable,
@@ -37,6 +39,7 @@ export default function RootLayout({
         <Toaster position="bottom-center" />
         {children}
       </body>
+      </ClerkProvider>
     </html>
   );
 }

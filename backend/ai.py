@@ -4,11 +4,14 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 import base64
+import json
+from typing import Iterator
 
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
+GEMINI_STREAM_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent"
 
 SUMMARY_PROMPTS = {
     "concise": (
@@ -42,12 +45,24 @@ SUMMARY_PROMPTS = {
     )
 }
 
+def _build_payload(text: str, length: str, temperature: float = None) -> dict:
+    prompt_template = SUMMARY_PROMPTS.get(length, SUMMARY_PROMPTS["medium"])
+    prompt = prompt_template.format(text=text[:100000])
+    system_instruction = (
+        "You are an expert document summarizer. You MUST strictly obey the user's length and format constraints. "
+        "Never include conversational filler like 'Here is a summary'."
+    )
+    return {
+        "systemInstruction": {"parts": [{"text": system_instruction}]},
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": temperature if temperature is not None else (0.1 if length == "concise" else 0.3)
+        }
+    }
+
 def generate_summary(text: str, length: str = "medium") -> str:
     if not text:
         return ""
-
-    prompt_template = SUMMARY_PROMPTS.get(length, SUMMARY_PROMPTS["medium"])
-    prompt = prompt_template.format(text=text[:100000])
 
     session = requests.Session()
     retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
@@ -60,20 +75,7 @@ def generate_summary(text: str, length: str = "medium") -> str:
         "X-goog-api-key": GOOGLE_API_KEY,
     }
 
-    system_instruction = (
-        "You are an expert document summarizer. You MUST strictly obey the user's length and format constraints. "
-        "Never include conversational filler like 'Here is a summary'."
-    )
-    
-    payload = {
-        "systemInstruction": {
-            "parts": [{"text": system_instruction}]
-        },
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.1 if length == "concise" else 0.3
-        }
-    }
+    payload = _build_payload(text, length)
 
     try:
         response = session.post(GEMINI_URL, headers=headers, json=payload, timeout=60)
@@ -91,6 +93,45 @@ def generate_summary(text: str, length: str = "medium") -> str:
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
 
+
+def generate_summary_stream(text: str, length: str = "medium") -> Iterator[str]:
+    """Streams summary chunks from Gemini as Server-Sent Events."""
+    if not text:
+        return
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GOOGLE_API_KEY,
+    }
+    payload = _build_payload(text, length)
+
+    try:
+        response = requests.post(
+            GEMINI_STREAM_URL + "?alt=sse",
+            headers=headers,
+            json=payload,
+            stream=True,
+            timeout=120
+        )
+        response.raise_for_status()
+
+        for line in response.iter_lines():
+            if not line:
+                continue
+            decoded = line.decode("utf-8")
+            if decoded.startswith("data: "):
+                json_str = decoded[6:]
+                try:
+                    chunk = json.loads(json_str)
+                    parts = chunk.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                    if parts:
+                        yield parts[0].get("text", "")
+                except json.JSONDecodeError:
+                    continue
+    except Exception as e:
+        raise Exception(f"Streaming failed: {str(e)}")
+
+
 def chat_with_document(document_text: str, message: str, history: list) -> str:
     if not document_text:
         return "Error: No document context."
@@ -99,7 +140,7 @@ def chat_with_document(document_text: str, message: str, history: list) -> str:
     retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
     session.mount("https://", adapter)
-    
+
     headers = {
         "Content-Type": "application/json",
         "X-goog-api-key": GOOGLE_API_KEY,
@@ -117,20 +158,16 @@ def chat_with_document(document_text: str, message: str, history: list) -> str:
             "role": msg.get("role", "user"),
             "parts": [{"text": msg.get("content", "")}]
         })
-    
+
     contents.append({
         "role": "user",
         "parts": [{"text": message}]
     })
 
     payload = {
-        "systemInstruction": {
-            "parts": [{"text": system_instruction}]
-        },
+        "systemInstruction": {"parts": [{"text": system_instruction}]},
         "contents": contents,
-        "generationConfig": {
-            "temperature": 0.2
-        }
+        "generationConfig": {"temperature": 0.2}
     }
 
     try:
@@ -140,6 +177,7 @@ def chat_with_document(document_text: str, message: str, history: list) -> str:
         return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         raise Exception(f"Chat failed: {str(e)}")
+
 
 def perform_ocr(image_bytes: bytes) -> str:
     session = requests.Session()

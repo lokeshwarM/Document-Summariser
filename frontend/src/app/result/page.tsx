@@ -2,21 +2,24 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser, UserButton } from '@clerk/nextjs';
 import { useStore } from '@/store/useStore';
-import { ArrowLeft, Copy, Check, Sparkles, Loader2, FileText, SendHorizontal, Bot, User } from 'lucide-react';
-import { summarizeDocument, askDocumentQuestion } from '@/lib/api';
+import { ArrowLeft, Copy, Check, Sparkles, Loader2, FileText, SendHorizontal, Bot, User, LayoutDashboard } from 'lucide-react';
+import { streamSummarize, askDocumentQuestion } from '@/lib/api';
 import ReactMarkdown from 'react-markdown';
 
 type Depth = 'concise' | 'medium' | 'detailed';
 
 export default function Result() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const {
     currentDocumentId,
     currentText,
     summaries,
     initialDepth,
     setSummaryForDepth,
+    appendToSummary,
     chatHistory,
     addChatMessage,
   } = useStore();
@@ -25,7 +28,7 @@ export default function Result() {
   const [activeDepth, setActiveDepth] = useState<Depth>('medium');
   const [generatingDepth, setGeneratingDepth] = useState<Depth | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  
+
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -34,15 +37,18 @@ export default function Result() {
     if (!currentDocumentId || !currentText) return;
     if (summaries[depth]) return;
     setGeneratingDepth(depth);
+    // Clear any partial content from a previous attempt
+    setSummaryForDepth(depth, '');
     try {
-      const data = await summarizeDocument(currentDocumentId, currentText, depth);
-      setSummaryForDepth(depth, data.summary);
+      await streamSummarize(currentDocumentId, depth, (chunk) => {
+        appendToSummary(depth, chunk);
+      });
     } catch {
-      // Silently fail
+      setSummaryForDepth(depth, 'Summary generation failed. Please try again.');
     } finally {
       setGeneratingDepth(null);
     }
-  }, [currentDocumentId, currentText, summaries, setSummaryForDepth]);
+  }, [currentDocumentId, currentText, summaries, setSummaryForDepth, appendToSummary]);
 
   const handleCopy = () => {
     const textToCopy = activeTab === 'summary' ? summaries[activeDepth] : currentText;
@@ -66,7 +72,7 @@ export default function Result() {
       const data = await askDocumentQuestion(currentDocumentId, userMessage, chatHistory);
       addChatMessage({ role: 'model', content: data.response });
     } catch {
-      addChatMessage({ role: 'model', content: "Sorry, I encountered an error processing your question." });
+      addChatMessage({ role: 'model', content: 'Q&A temporarily unavailable. Please try again.' });
     } finally {
       setIsChatting(false);
     }
@@ -106,29 +112,34 @@ export default function Result() {
           <button onClick={() => router.push('/')}
             className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold border-2 transition-transform hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
             style={{ boxShadow: '2px 2px 0px #222222' }}>
-            <ArrowLeft size={16} /> Upload Another Document
+            <ArrowLeft size={16} /> Upload Another
           </button>
+          <div className="flex items-center gap-2">
+            {isSignedIn && (
+              <button onClick={() => router.push('/dashboard')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-[#222222] bg-[#F5E7C6] text-[#222222] hover:-translate-y-0.5 transition-transform"
+                style={{ boxShadow: '2px 2px 0px #222222' }}>
+                <LayoutDashboard size={14} /> History
+              </button>
+            )}
+            <UserButton />
+          </div>
         </div>
 
         <div className="w-full rounded-2xl overflow-hidden border-4 flex flex-col border-[#222222] bg-[#FAF3E1]"
-             style={{ boxShadow: '6px 6px 0px #222222', minHeight: '600px', height: '80vh', maxHeight: '900px' }}>
+             style={{ boxShadow: '6px 6px 0px #222222', height: '80vh', maxHeight: '900px' }}>
           
+          {/* Tabs */}
           <div className="flex border-b-4 border-[#222222] flex-shrink-0">
             <button onClick={() => setActiveTab('summary')}
               className="flex-1 py-2 md:py-4 text-center font-bold flex items-center justify-center gap-1 md:gap-2 transition-colors border-r-4 border-[#222222] text-sm md:text-base"
-              style={{
-                background: activeTab === 'summary' ? '#FAF3E1' : '#F5E7C6',
-                color: '#222222'
-              }}>
+              style={{ background: activeTab === 'summary' ? '#FAF3E1' : '#F5E7C6', color: '#222222' }}>
               <Sparkles size={16} className={activeTab === 'summary' ? "text-[#FF6D1F]" : "text-[#222222]"} />
               AI Summary
             </button>
             <button onClick={() => setActiveTab('text')}
               className="flex-1 py-2 md:py-4 text-center font-bold flex items-center justify-center gap-1 md:gap-2 transition-colors text-sm md:text-base"
-              style={{
-                background: activeTab === 'text' ? '#FAF3E1' : '#F5E7C6',
-                color: '#222222'
-              }}>
+              style={{ background: activeTab === 'text' ? '#FAF3E1' : '#F5E7C6', color: '#222222' }}>
               <FileText size={16} className={activeTab === 'text' ? "text-[#FF6D1F]" : "text-[#222222]"} />
               Extracted Text
             </button>
@@ -136,10 +147,11 @@ export default function Result() {
 
           {activeTab === 'summary' && (
             <div className="flex flex-col flex-1 overflow-hidden">
+              {/* Depth toolbar */}
               <div className="p-2 md:p-4 border-b-4 flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
                 <span className="text-sm font-bold ml-1 md:ml-2 text-[#222222] hidden sm:inline">Depth:</span>
-                {['concise', 'medium', 'detailed'].map((d) => (
-                  <button key={d} onClick={() => { setActiveDepth(d as Depth); generateSummary(d as Depth); }}
+                {(['concise', 'medium', 'detailed'] as Depth[]).map((d) => (
+                  <button key={d} onClick={() => { setActiveDepth(d); generateSummary(d); }}
                     className="px-3 py-1 md:px-4 md:py-1.5 rounded-xl text-xs md:text-sm flex-1 sm:flex-none font-bold border-2 transition-transform hover:-translate-y-0.5 active:translate-y-0 border-[#222222]"
                     style={{
                       background: activeDepth === d ? '#FF6D1F' : '#FAF3E1',
@@ -151,15 +163,16 @@ export default function Result() {
                 ))}
               </div>
 
+              {/* Scrollable content + chat history */}
               <div className="flex-1 overflow-y-auto p-3 md:p-8 relative">
                 <button onClick={handleCopy}
                   className="absolute top-4 right-4 p-2 rounded-xl border-2 transition-all hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
                   style={{ boxShadow: '2px 2px 0px #222222' }}
                   title="Copy to clipboard">
-                  {isCopied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                  {isCopied ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
                 </button>
                 
-                {isGenerating ? (
+                {isGenerating && !currentSummary ? (
                   <div className="h-full flex flex-col items-center justify-center gap-4 py-20">
                     <Loader2 size={40} className="animate-spin text-[#FF6D1F]" />
                     <p className="font-bold text-[#222222]">Generating {activeDepth} summary...</p>
@@ -167,6 +180,9 @@ export default function Result() {
                 ) : currentSummary ? (
                   <div className="prose prose-orange max-w-none prose-headings:text-[#222222] prose-p:text-[#222222] prose-strong:text-[#222222] prose-li:text-[#222222] pb-10">
                     <ReactMarkdown>{currentSummary}</ReactMarkdown>
+                    {isGenerating && (
+                      <span className="inline-block w-2 h-4 bg-[#FF6D1F] animate-pulse ml-0.5 align-middle" />
+                    )}
                   </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center gap-3 py-20 opacity-50">
@@ -175,7 +191,7 @@ export default function Result() {
                   </div>
                 )}
                 
-                {/* Chat History Container (Inline below summary) */}
+                {/* Chat history */}
                 {chatHistory.length > 0 && (
                   <div className="mt-8 border-t-2 border-dashed border-[#222222] pt-8 flex flex-col gap-4">
                     {chatHistory.map((msg, idx) => (
@@ -191,11 +207,12 @@ export default function Result() {
                       </div>
                     ))}
                     {isChatting && (
-                      <div className="flex gap-3 flex-row">
-                        <div className="w-8 h-8 rounded-full border-2 border-[#222222] bg-[#F5E7C6] flex items-center justify-center flex-shrink-0">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full border-2 border-[#222222] bg-[#F5E7C6] flex items-center justify-center">
                           <Bot size={16} />
                         </div>
-                        <div className="p-3 rounded-xl border-2 border-[#222222] bg-[#F5E7C6] flex items-center gap-2" style={{ boxShadow: '2px 2px 0px #222222' }}>
+                        <div className="p-3 rounded-xl border-2 border-[#222222] bg-[#F5E7C6] flex items-center gap-2"
+                             style={{ boxShadow: '2px 2px 0px #222222' }}>
                           <Loader2 size={16} className="animate-spin text-[#FF6D1F]" />
                           <span className="text-sm font-bold">Thinking...</span>
                         </div>
@@ -206,8 +223,13 @@ export default function Result() {
                 )}
               </div>
 
-              {/* Chat Input Box */}
+              {/* Chat Input */}
               <div className="p-2 md:p-4 border-t-4 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
+                {!isSignedIn && chatHistory.length === 0 && (
+                  <p className="text-center text-xs font-medium text-[#222222] opacity-60 mb-2">
+                    Sign in to save your Q&amp;A history across sessions.
+                  </p>
+                )}
                 <form onSubmit={handleSendMessage} className="relative flex items-center">
                   <input
                     type="text"
@@ -215,19 +237,17 @@ export default function Result() {
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask anything about this document..."
                     disabled={isChatting || !currentSummary}
-                    className="w-full py-2 md:py-3 pl-3 md:pl-4 text-sm md:text-base pr-12 rounded-xl border-2 border-[#222222] bg-[#FAF3E1] text-[#222222] font-medium outline-none focus:ring-2 focus:ring-[#FF6D1F]"
-                    style={{ boxShadow: 'inset 2px 2px 0px rgba(0,0,0,0.05)' }}
+                    className="w-full py-2 md:py-3 pl-3 md:pl-4 pr-12 rounded-xl border-2 border-[#222222] bg-[#FAF3E1] text-[#222222] text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-[#FF6D1F]"
                   />
                   <button
                     type="submit"
                     disabled={!chatInput.trim() || isChatting || !currentSummary}
-                    className="absolute right-2 p-1.5 rounded-lg bg-[#FF6D1F] border-2 border-[#222222] text-[#222222] disabled:opacity-50 transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                    className="absolute right-2 p-1.5 rounded-lg bg-[#FF6D1F] border-2 border-[#222222] text-[#222222] disabled:opacity-50 transition-transform hover:-translate-y-0.5"
                   >
-                    <SendHorizontal size={16} />
+                    <SendHorizontal size={18} />
                   </button>
                 </form>
               </div>
-
             </div>
           )}
 
@@ -235,16 +255,14 @@ export default function Result() {
             <div className="flex-1 overflow-y-auto p-3 md:p-8 relative">
               <button onClick={handleCopy}
                 className="absolute top-4 right-4 p-2 rounded-xl border-2 transition-all hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
-                style={{ boxShadow: '2px 2px 0px #222222' }}
-                title="Copy to clipboard">
-                {isCopied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                style={{ boxShadow: '2px 2px 0px #222222' }}>
+                {isCopied ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
               </button>
               <div className="prose max-w-none font-mono text-sm leading-relaxed whitespace-pre-wrap text-[#222222]">
                 {currentText || "No text available."}
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>

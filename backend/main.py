@@ -1,12 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from logger import setup_logger
 logger = setup_logger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from extraction import extract_text_from_pdf, extract_text_from_image
 from pydantic import BaseModel
-from ai import generate_summary, chat_with_document
-from typing import List
+from ai import generate_summary, generate_summary_stream, chat_with_document
+from typing import List, Optional
 import models
 from database import engine, get_db
 import os
@@ -27,8 +28,9 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to Document Summary Assistant API"}
 
+
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_document(file: UploadFile = File(...), clerk_user_id: Optional[str] = Form(None), db: Session = Depends(get_db)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
     content_type = file.content_type
@@ -39,7 +41,6 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     if len(file_bytes) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
 
-    # Security: Verify magic bytes (file signature) to prevent spoofing
     header = file_bytes[:8]
     is_pdf = header.startswith(b'%PDF-')
     is_jpeg = header.startswith(b'\xff\xd8\xff')
@@ -50,7 +51,6 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
         raise HTTPException(status_code=400, detail="Invalid file signature. File is not a valid PDF or Image.")
 
     try:
-
         extracted_text = ""
         if "pdf" in content_type.lower():
             extracted_text = await extract_text_from_pdf(file_bytes)
@@ -60,11 +60,13 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
             raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a PDF or image.")
         if not extracted_text:
             raise HTTPException(status_code=400, detail="Could not extract any text from the file.")
+
         new_doc = models.Document(
             filename=file.filename,
             file_type=content_type,
             extracted_text=extracted_text,
-            owner_id=None
+            owner_id=None,
+            clerk_user_id=clerk_user_id
         )
         db.add(new_doc)
         db.commit()
@@ -109,14 +111,53 @@ def summarize_document(request: SummaryRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("An error occurred during AI summarization")
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+
+@app.get("/summarize/stream")
+def stream_summary(document_id: int, length: str = "medium", db: Session = Depends(get_db)):
+    """Streams a summary using Server-Sent Events for real-time word-by-word display."""
+    doc = db.query(models.Document).filter(models.Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found in database")
+
+    def event_stream():
+        full_text = ""
+        try:
+            for chunk in generate_summary_stream(doc.extracted_text, length):
+                full_text += chunk
+                yield f"data: {chunk}\n\n"
+        except Exception as e:
+            logger.exception("Streaming summary failed")
+            yield f"data: [ERROR] {str(e)}\n\n"
+            return
+
+        # Save the full summary to DB after streaming completes
+        try:
+            new_summary = models.Summary(
+                document_id=doc.id,
+                summary_length=length,
+                content=full_text
+            )
+            db.add(new_summary)
+            db.commit()
+        except Exception:
+            logger.exception("Failed to persist streamed summary")
+
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 class ChatMessage(BaseModel):
     role: str
     content: str
+
 
 class ChatRequest(BaseModel):
     document_id: int
     message: str
     history: List[ChatMessage] = []
+
 
 @app.post("/chat")
 def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
@@ -130,3 +171,27 @@ def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("An error occurred during chat")
         raise HTTPException(status_code=500, detail=f"AI Chat Error: {str(e)}")
+
+@app.get("/documents")
+def get_user_documents(user_id: str, db: Session = Depends(get_db)):
+    """Fetch all documents for a Clerk user, with their summaries."""
+    docs = db.query(models.Document).filter(
+        models.Document.clerk_user_id == user_id
+    ).order_by(models.Document.created_at.desc()).all()
+    
+    result = []
+    for doc in docs:
+        summaries = db.query(models.Summary).filter(
+            models.Summary.document_id == doc.id
+        ).all()
+        result.append({
+            "id": doc.id,
+            "filename": doc.filename,
+            "file_type": doc.file_type,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+            "summaries": [
+                {"summary_length": s.summary_length, "content": s.content}
+                for s in summaries
+            ]
+        })
+    return {"documents": result}

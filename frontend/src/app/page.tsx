@@ -2,13 +2,15 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useStore } from '@/store/useStore';
 import { uploadDocument, summarizeDocument } from '@/lib/api';
-import { FileText, Upload, Sparkles, Loader2 } from 'lucide-react';
+import { FileText, Upload, Sparkles, Loader2, LayoutDashboard } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function Home() {
   const router = useRouter();
+  const { isSignedIn, user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -22,6 +24,7 @@ export default function Home() {
     setDocumentData,
     setSummaryForDepth,
     setInitialDepth,
+    clearSummaries,
     setIsUploading,
     setIsSummarizing,
     setError,
@@ -32,6 +35,8 @@ export default function Home() {
       toast.error("Please upload a PDF or Image file.");
       return;
     }
+    // Reset all prior document state so old summaries never bleed through
+    clearSummaries();
     setFile(selectedFile);
     setError(null);
     setIsSelectingDepth(false);
@@ -54,7 +59,6 @@ export default function Home() {
     try {
       const data = await uploadDocument(file);
       setDocumentData(data.document_id, data.text);
-      router.push("/result");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       const msg = e.response?.data?.detail || "Upload failed. Please try again.";
@@ -65,14 +69,16 @@ export default function Home() {
     }
   };
 
-  const handleSummarizeClick = () => setIsSelectingDepth(true);
+  const handleSummarizeClick = () => {
+    setIsSelectingDepth(true);
+  };
 
   const executeSummarize = async (depth: string) => {
-    if (!file && !currentDocumentId) return;
     let docId = currentDocumentId;
     let docText = currentText;
+    setIsSummarizing(true);
 
-    if (!docId) {
+    if (!docId || !docText) {
       if (!file) return;
       setIsUploading(true);
       try {
@@ -93,7 +99,6 @@ export default function Home() {
     }
 
     if (!docText || !docId) return;
-    setIsSummarizing(true);
     try {
       const data = await summarizeDocument(docId, docText, depth);
       setSummaryForDepth(depth, data.summary);
@@ -113,6 +118,30 @@ export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
       <Toaster position="top-center" />
+
+      {/* Auth Nav Bar */}
+      <div className="fixed top-4 right-4 flex items-center gap-2 z-50">
+        {isSignedIn ? (
+          <>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-[#222222] bg-[#F5E7C6] text-[#222222] hover:-translate-y-0.5 transition-transform"
+              style={{ boxShadow: '2px 2px 0px #222222' }}
+            >
+              <LayoutDashboard size={14} /> History
+            </button>
+            <UserButton />
+          </>
+        ) : (
+          <SignInButton mode="modal">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-[#222222] bg-[#FF6D1F] text-[#222222] hover:-translate-y-0.5 transition-transform"
+              style={{ boxShadow: '2px 2px 0px #222222' }}>
+              Sign In
+            </button>
+          </SignInButton>
+        )}
+      </div>
+
       <div className="w-full max-w-xl mx-auto flex flex-col items-center">
         
         <header className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -127,6 +156,11 @@ export default function Home() {
           <p className="text-base md:text-lg font-medium opacity-80 text-[#222222]">
             Upload a PDF or image. Extract text instantly.<br/>Generate AI-powered summaries at any depth.
           </p>
+          {isSignedIn && (
+            <p className="text-xs font-bold mt-3 text-[#FF6D1F]">
+              &#x2713; Your document history is being saved, {user?.firstName}!
+            </p>
+          )}
         </header>
 
         <div className="w-full rounded-2xl p-6 mb-4 transition-all border-4 border-[#222222] bg-[#F5E7C6]"
@@ -173,14 +207,11 @@ export default function Home() {
                       cursor: (!!currentText && !!currentDocumentId) ? 'default' : 'pointer'
                     }}>
                     {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                    {isUploading ? "Extracting..." : (currentText && currentDocumentId) ? "Text Extracted ✓" : "Extract Text"}
+                    {isUploading ? "Extracting..." : (currentText && currentDocumentId) ? "Text Extracted \u2713" : "Extract Text"}
                   </button>
                   <button onClick={handleSummarizeClick} disabled={isUploading || isSummarizing}
                     className="w-full font-bold py-3 px-5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm border-2 hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#FF6D1F] text-[#222222]"
-                    style={{
-                      boxShadow: '3px 3px 0px #222222',
-                      opacity: (isUploading || isSummarizing) ? 0.6 : 1,
-                    }}>
+                    style={{ boxShadow: '3px 3px 0px #222222', opacity: (isUploading || isSummarizing) ? 0.6 : 1 }}>
                     <Sparkles size={16} /> Summarize
                   </button>
                 </div>
@@ -221,7 +252,7 @@ export default function Home() {
           )}
         </div>
         <p className="text-center text-xs font-medium opacity-60 text-[#222222]">
-          Your document is processed securely and never stored permanently.
+          {isSignedIn ? 'Documents saved to your account.' : 'Sign in to save your document history across sessions.'}
         </p>
       </div>
     </main>
