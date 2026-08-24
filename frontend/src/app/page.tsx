@@ -15,7 +15,8 @@ export default function Home() {
     isUploading,
     isSummarizing,
     setDocumentData,
-    setSummary,
+    setSummaryForDepth,
+    setInitialDepth,
     setIsUploading,
     setIsSummarizing,
     setError,
@@ -91,7 +92,8 @@ export default function Home() {
     setIsSummarizing(true);
     try {
       const data = await summarizeDocument(docId, docText, depth);
-      setSummary(data.summary);
+      setSummaryForDepth(depth, data.summary);
+      setInitialDepth(depth);
       setIsSelectingDepth(false);
       router.push("/result");
     } catch (err: unknown) {
@@ -109,7 +111,7 @@ export default function Home() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
       style={{ background: "linear-gradient(145deg, #FDF4D2 0%, #f5efd0 40%, #ede8d8 100%)" }}
     >
-      {/* Subtle decorative blobs */}
+      {/* Decorative blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-30 blur-3xl"
@@ -236,7 +238,7 @@ export default function Home() {
                     <h3 className="text-sm font-semibold" style={{ color: "#946D6D" }}>Select Summary Depth</h3>
                     <button
                       onClick={() => setIsSelectingDepth(false)}
-                      className="text-xs underline underline-offset-2 transition-colors"
+                      className="text-xs underline underline-offset-2"
                       style={{ color: "#b09898" }}
                     >
                       Cancel
@@ -244,7 +246,7 @@ export default function Home() {
                   </div>
 
                   {isSummarizing || isUploading ? (
-                    <div className="py-6 flex flex-col items-center justify-center gap-3">
+                    <div className="py-6 flex flex-col items-center gap-3">
                       <Loader2 size={26} className="animate-spin" style={{ color: "#A290B7" }} />
                       <span className="text-sm" style={{ color: "#a08888" }}>
                         {isUploading ? "Extracting Text…" : "Generating Summary…"}
@@ -253,18 +255,15 @@ export default function Home() {
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { key: "short", label: "Short", desc: "3–5 bullets" },
+                        { key: "concise", label: "Concise", desc: "3–5 bullets" },
                         { key: "medium", label: "Medium", desc: "Comprehensive" },
-                        { key: "long", label: "Detailed", desc: "Section-by-section" },
+                        { key: "detailed", label: "Detailed", desc: "Section-by-section" },
                       ].map((opt) => (
                         <button
                           key={opt.key}
                           onClick={() => executeSummarize(opt.key)}
-                          className="rounded-xl py-3 text-center flex flex-col items-center gap-1 transition-all group"
-                          style={{
-                            background: "rgba(255,255,255,0.7)",
-                            border: "1.5px solid rgba(176,205,230,0.5)",
-                          }}
+                          className="rounded-xl py-3 text-center flex flex-col items-center gap-1 transition-all"
+                          style={{ background: "rgba(255,255,255,0.7)", border: "1.5px solid rgba(176,205,230,0.5)" }}
                           onMouseEnter={e => {
                             (e.currentTarget as HTMLButtonElement).style.background = "rgba(162,144,183,0.15)";
                             (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(162,144,183,0.6)";
@@ -286,7 +285,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Footer hint */}
         <p className="text-center text-xs" style={{ color: "#c4a8a8" }}>
           Your document is processed securely and never stored permanently.
         </p>
