@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { uploadDocument, summarizeDocument } from "@/lib/api";
-import { FileText, Loader2, Sparkles, ClipboardList, Upload } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { FileText, Loader2, Sparkles, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function Home() {
+  const router = useRouter();
   const {
     currentDocumentId,
     currentText,
-    currentSummary,
     isUploading,
     isSummarizing,
     setDocumentData,
@@ -23,7 +23,6 @@ export default function Home() {
 
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState<'summary' | 'text'>('summary');
   const [isSelectingDepth, setIsSelectingDepth] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,14 +45,14 @@ export default function Home() {
     if (!file) return;
     // If text is already extracted for this document, just switch to the tab
     if (currentDocumentId && currentText) {
-      setActiveTab('text');
+      router.push('/result');
       return;
     }
     setIsUploading(true);
     try {
       const data = await uploadDocument(file);
       setDocumentData(data.document_id, data.text);
-      setActiveTab('text');
+      router.push('/result');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       const msg = e.response?.data?.detail || "Upload failed. Please try again."; setError(msg); toast.error(msg);
@@ -94,11 +93,11 @@ export default function Home() {
     if (!docText || !docId) return;
 
     setIsSummarizing(true);
-    setActiveTab('summary');
     try {
       const data = await summarizeDocument(docId, docText, depth);
       setSummary(data.summary);
       setIsSelectingDepth(false); // Hide the depth selector after success
+      router.push('/result');
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       const msg = e.response?.data?.detail || "Summarization failed. Please try again."; setError(msg); toast.error(msg);
@@ -235,70 +234,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Results Panel (Tabbed) */}
-        {(currentText || currentSummary) && (
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Tab Bar */}
-            <div className="flex border-b border-white/10 bg-black/20">
-              <button
-                onClick={() => setActiveTab('summary')}
-                className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors ${
-                  activeTab === 'summary' 
-                    ? 'text-violet-300 border-b-2 border-violet-500 bg-white/5' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <Sparkles size={16} className={activeTab === 'summary' ? 'text-violet-400' : ''} />
-                AI Summary
-              </button>
-              <button
-                onClick={() => setActiveTab('text')}
-                className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors ${
-                  activeTab === 'text' 
-                    ? 'text-indigo-300 border-b-2 border-indigo-500 bg-white/5' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <ClipboardList size={16} className={activeTab === 'text' ? 'text-indigo-400' : ''} />
-                Extracted Text
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-5 md:p-8">
-              {activeTab === 'summary' && (
-                <div className="min-h-[300px]">
-                  {currentSummary ? (
-                    <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-headings:text-slate-200">
-                      <ReactMarkdown>{currentSummary}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-[300px] text-slate-500 italic">
-                      <Sparkles size={32} className="mb-4 opacity-20" />
-                      No summary generated yet.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'text' && (
-                <div className="min-h-[300px]">
-                  {currentText ? (
-                    <div className="prose prose-invert max-w-none prose-p:leading-relaxed">
-                      <ReactMarkdown>{currentText}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-[300px] text-slate-500 italic">
-                      <ClipboardList size={32} className="mb-4 opacity-20" />
-                      No text extracted yet.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+              </div>
     </main>
   );
 }
