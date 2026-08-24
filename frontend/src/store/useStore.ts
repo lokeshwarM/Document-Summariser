@@ -16,6 +16,7 @@ interface DocumentState {
     error: string | null;
 
     setDocumentData: (id: number, text: string) => void;
+    resetDocument: () => void;
     setSummaryForDepth: (depth: string, summary: string) => void;
     appendToSummary: (depth: string, chunk: string) => void;
     setInitialDepth: (depth: string) => void;
@@ -60,4 +61,12 @@ export const useStore = create<DocumentState>((set) => ({
     setIsUploading: (isUploading) => set({ isUploading }),
     setIsSummarizing: (isSummarizing) => set({ isSummarizing }),
     setError: (error) => set({ error, isUploading: false, isSummarizing: false }),
+    resetDocument: () => set({
+        currentDocumentId: null,
+        currentText: null,
+        summaries: {},
+        chatHistory: [],
+        error: null,
+        initialDepth: "medium"
+    }),
 }));

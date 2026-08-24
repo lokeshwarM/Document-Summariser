@@ -24,7 +24,7 @@ export default function Home() {
     setDocumentData,
     setSummaryForDepth,
     setInitialDepth,
-    clearSummaries,
+    resetDocument,
     setIsUploading,
     setIsSummarizing,
     setError,
@@ -35,8 +35,8 @@ export default function Home() {
       toast.error("Please upload a PDF or Image file.");
       return;
     }
-    // Reset all prior document state so old summaries never bleed through
-    clearSummaries();
+    // HARD RESET all prior document state
+    resetDocument();
     setFile(selectedFile);
     setError(null);
     setIsSelectingDepth(false);
@@ -57,7 +57,7 @@ export default function Home() {
     }
     setIsUploading(true);
     try {
-      const data = await uploadDocument(file);
+      const data = await uploadDocument(file, user?.id);
       setDocumentData(data.document_id, data.text);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -82,7 +82,7 @@ export default function Home() {
       if (!file) return;
       setIsUploading(true);
       try {
-        const data = await uploadDocument(file);
+        const data = await uploadDocument(file, user?.id);
         setDocumentData(data.document_id, data.text);
         docId = data.document_id;
         docText = data.text;
