@@ -6,14 +6,20 @@ from pydantic import BaseModel
 from ai import generate_summary
 import models
 from database import engine, get_db
+import os
 
 models.logger.info("Initializing database schema..."); Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Document Summary Assistant API", version="1.0.0")
 
+frontend_url = os.getenv("FRONTEND_URL")
+origins = ["http://localhost:3000", "http://localhost:3001"]
+if frontend_url:
+    origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
