@@ -65,7 +65,7 @@ export default function Result() {
     try {
       const data = await askDocumentQuestion(currentDocumentId, userMessage, chatHistory);
       addChatMessage({ role: 'model', content: data.response });
-    } catch (err) {
+    } catch {
       addChatMessage({ role: 'model', content: "Sorry, I encountered an error processing your question." });
     } finally {
       setIsChatting(false);
@@ -85,7 +85,7 @@ export default function Result() {
     if (initialDepth) {
       setActiveDepth(initialDepth as Depth);
     }
-  }, []);
+  }, [initialDepth, summaries, generateSummary]);
 
   useEffect(() => {
     if (chatEndRef.current) {
