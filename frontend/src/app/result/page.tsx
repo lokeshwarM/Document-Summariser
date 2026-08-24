@@ -99,12 +99,12 @@ export default function Result() {
   const isGenerating = generatingDepth === activeDepth;
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 md:p-8 animate-in fade-in duration-500">
-      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="min-h-screen flex flex-col items-center p-2 md:p-8 animate-in fade-in duration-500">
+      <div className="w-full max-w-4xl mx-auto flex flex-col gap-3 md:gap-6">
         
         <div className="flex items-center justify-between">
           <button onClick={() => router.push('/')}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 transition-transform hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
+            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-bold border-2 transition-transform hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
             style={{ boxShadow: '2px 2px 0px #222222' }}>
             <ArrowLeft size={16} /> Upload Another Document
           </button>
@@ -115,32 +115,32 @@ export default function Result() {
           
           <div className="flex border-b-4 border-[#222222] flex-shrink-0">
             <button onClick={() => setActiveTab('summary')}
-              className="flex-1 py-4 text-center font-bold flex items-center justify-center gap-2 transition-colors border-r-4 border-[#222222]"
+              className="flex-1 py-2 md:py-4 text-center font-bold flex items-center justify-center gap-1 md:gap-2 transition-colors border-r-4 border-[#222222] text-sm md:text-base"
               style={{
                 background: activeTab === 'summary' ? '#FAF3E1' : '#F5E7C6',
                 color: '#222222'
               }}>
-              <Sparkles size={18} className={activeTab === 'summary' ? "text-[#FF6D1F]" : "text-[#222222]"} />
+              <Sparkles size={16} className={activeTab === 'summary' ? "text-[#FF6D1F]" : "text-[#222222]"} />
               AI Summary
             </button>
             <button onClick={() => setActiveTab('text')}
-              className="flex-1 py-4 text-center font-bold flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 py-2 md:py-4 text-center font-bold flex items-center justify-center gap-1 md:gap-2 transition-colors text-sm md:text-base"
               style={{
                 background: activeTab === 'text' ? '#FAF3E1' : '#F5E7C6',
                 color: '#222222'
               }}>
-              <FileText size={18} className={activeTab === 'text' ? "text-[#FF6D1F]" : "text-[#222222]"} />
+              <FileText size={16} className={activeTab === 'text' ? "text-[#FF6D1F]" : "text-[#222222]"} />
               Extracted Text
             </button>
           </div>
 
           {activeTab === 'summary' && (
             <div className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-4 border-b-4 flex flex-wrap items-center gap-3 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
-                <span className="text-sm font-bold ml-2 text-[#222222]">Depth:</span>
+              <div className="p-2 md:p-4 border-b-4 flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
+                <span className="text-sm font-bold ml-1 md:ml-2 text-[#222222] hidden sm:inline">Depth:</span>
                 {['concise', 'medium', 'detailed'].map((d) => (
                   <button key={d} onClick={() => { setActiveDepth(d as Depth); generateSummary(d as Depth); }}
-                    className="px-4 py-1.5 rounded-xl text-sm font-bold border-2 transition-transform hover:-translate-y-0.5 active:translate-y-0 border-[#222222]"
+                    className="px-3 py-1 md:px-4 md:py-1.5 rounded-xl text-xs md:text-sm flex-1 sm:flex-none font-bold border-2 transition-transform hover:-translate-y-0.5 active:translate-y-0 border-[#222222]"
                     style={{
                       background: activeDepth === d ? '#FF6D1F' : '#FAF3E1',
                       color: '#222222',
@@ -151,12 +151,12 @@ export default function Result() {
                 ))}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
+              <div className="flex-1 overflow-y-auto p-3 md:p-8 relative">
                 <button onClick={handleCopy}
                   className="absolute top-4 right-4 p-2 rounded-xl border-2 transition-all hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
                   style={{ boxShadow: '2px 2px 0px #222222' }}
                   title="Copy to clipboard">
-                  {isCopied ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
+                  {isCopied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
                 </button>
                 
                 {isGenerating ? (
@@ -207,7 +207,7 @@ export default function Result() {
               </div>
 
               {/* Chat Input Box */}
-              <div className="p-4 border-t-4 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
+              <div className="p-2 md:p-4 border-t-4 border-[#222222] bg-[#F5E7C6] flex-shrink-0">
                 <form onSubmit={handleSendMessage} className="relative flex items-center">
                   <input
                     type="text"
@@ -215,7 +215,7 @@ export default function Result() {
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask anything about this document..."
                     disabled={isChatting || !currentSummary}
-                    className="w-full py-3 pl-4 pr-12 rounded-xl border-2 border-[#222222] bg-[#FAF3E1] text-[#222222] font-medium outline-none focus:ring-2 focus:ring-[#FF6D1F]"
+                    className="w-full py-2 md:py-3 pl-3 md:pl-4 text-sm md:text-base pr-12 rounded-xl border-2 border-[#222222] bg-[#FAF3E1] text-[#222222] font-medium outline-none focus:ring-2 focus:ring-[#FF6D1F]"
                     style={{ boxShadow: 'inset 2px 2px 0px rgba(0,0,0,0.05)' }}
                   />
                   <button
@@ -223,7 +223,7 @@ export default function Result() {
                     disabled={!chatInput.trim() || isChatting || !currentSummary}
                     className="absolute right-2 p-1.5 rounded-lg bg-[#FF6D1F] border-2 border-[#222222] text-[#222222] disabled:opacity-50 transition-transform hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <SendHorizontal size={18} />
+                    <SendHorizontal size={16} />
                   </button>
                 </form>
               </div>
@@ -232,12 +232,12 @@ export default function Result() {
           )}
 
           {activeTab === 'text' && (
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
+            <div className="flex-1 overflow-y-auto p-3 md:p-8 relative">
               <button onClick={handleCopy}
                 className="absolute top-4 right-4 p-2 rounded-xl border-2 transition-all hover:-translate-y-1 active:translate-y-0 border-[#222222] bg-[#F5E7C6] text-[#222222]"
                 style={{ boxShadow: '2px 2px 0px #222222' }}
                 title="Copy to clipboard">
-                {isCopied ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
+                {isCopied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
               </button>
               <div className="prose max-w-none font-mono text-sm leading-relaxed whitespace-pre-wrap text-[#222222]">
                 {currentText || "No text available."}
