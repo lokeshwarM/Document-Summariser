@@ -114,14 +114,14 @@ export default function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full opacity-10 blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-16">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-4 md:py-8">
         {/* Header */}
-        <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-6">
+        <header className="text-center mb-4 md:mb-8">
+          <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-indigo-300 text-sm mb-4 md:mb-6">
             <Sparkles size={14} />
             <span>Powered by Gemini 2.0 Flash Lite</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent mb-2 md:mb-4">
             Document Summary Assistant
           </h1>
           <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto px-4">
@@ -140,13 +140,13 @@ export default function Home() {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-6 md:p-10 text-center cursor-pointer transition-all mb-6 ${
+            className={`border-2 border-dashed rounded-xl p-4 md:p-10 text-center cursor-pointer transition-all mb-2 md:mb-4 ${
               isDragging
                 ? "border-indigo-400 bg-indigo-500/10"
                 : "border-white/20 hover:border-indigo-500/50 hover:bg-white/5"
             }`}
           >
-            <FileText className="mx-auto mb-3 text-slate-400" size={36} />
+            <FileText className="mx-auto mb-2 text-slate-400" size={36} />
             {file ? (
               <div>
                 <p className="font-medium text-indigo-300 text-base">{file.name}</p>
@@ -195,7 +195,7 @@ export default function Home() {
               ) : (
                 /* Depth Selection Options */
                 <div className="bg-black/20 rounded-xl p-6 border border-white/5 animate-in zoom-in-95 duration-200">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2 md:mb-4">
                     <h3 className="text-sm font-medium text-slate-300">Select Summary Depth:</h3>
                     <button 
                       onClick={() => setIsSelectingDepth(false)}
@@ -211,7 +211,7 @@ export default function Home() {
                       <span className="text-slate-400 text-sm">{isUploading ? "Extracting Text..." : "Generating Summary..."}</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2">
                       {[
                         { key: "short", label: "Short", desc: "3-5 bullets" },
                         { key: "medium", label: "Medium", desc: "Comprehensive" },
@@ -220,7 +220,7 @@ export default function Home() {
                         <button
                           key={opt.key}
                           onClick={() => executeSummarize(opt.key)}
-                          className="bg-white/5 border border-white/10 hover:border-violet-500/50 hover:bg-violet-500/10 text-slate-300 py-4 rounded-xl transition-all text-center flex flex-col items-center justify-center gap-1 group"
+                          className="bg-white/5 border border-white/10 hover:border-violet-500/50 hover:bg-violet-500/10 text-slate-300 py-2 rounded-xl transition-all text-center flex flex-col items-center justify-center gap-1 group"
                         >
                           <span className="font-semibold text-white group-hover:text-violet-300 transition-colors">{opt.label}</span>
                           <span className="text-xs text-slate-500 group-hover:text-violet-400/70">{opt.desc}</span>
