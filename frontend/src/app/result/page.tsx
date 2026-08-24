@@ -186,7 +186,7 @@ export default function Result() {
                         </div>
                         <div className={`p-3 rounded-xl border-2 border-[#222222] max-w-[85%] ${msg.role === 'user' ? 'bg-[#FF6D1F] text-[#222222]' : 'bg-[#F5E7C6] text-[#222222]'}`}
                              style={{ boxShadow: '2px 2px 0px #222222' }}>
-                          <ReactMarkdown className="prose prose-sm prose-p:m-0 prose-p:leading-snug">{msg.content}</ReactMarkdown>
+                          <div className="prose prose-sm prose-p:m-0 prose-p:leading-snug"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                         </div>
                       </div>
                     ))}
