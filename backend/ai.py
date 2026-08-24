@@ -10,9 +10,39 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
 
 SUMMARY_PROMPTS = {
-    "short": "Summarize the following document in 3-5 bullet points focusing only on the most critical takeaways:\n\n{text}",
-    "medium": "Provide a comprehensive summary of the following document. Include an introduction, key themes, and a conclusion:\n\n{text}",
-    "long": "Provide an extremely detailed, section-by-section summary of the following document. Extract all important data, dates, and names:\n\n{text}",
+    # Concise: strict 80-120 word bullet-point summary
+    "concise": (
+        "You are a precise document summarizer. Your task: summarize the document below in EXACTLY 3 to 5 bullet points. "
+        "Each bullet must be a single, punchy sentence capturing only the most critical insight. "
+        "STRICT RULE: Your entire response must be under 120 words. Do NOT write any introduction or conclusion sentence. "
+        "Start directly with the first bullet point.\n\n"
+        "Document:\n{text}"
+    ),
+    # Medium: 250-350 word balanced overview
+    "medium": (
+        "You are a professional document analyst. Write a balanced summary of the document below. "
+        "Structure it with: a 1-sentence introduction, 3-4 key themes as short paragraphs, and a 1-sentence conclusion. "
+        "STRICT RULE: Your entire response must be between 250 and 350 words. "
+        "Use clear section labels (e.g., **Introduction**, **Key Themes**, **Conclusion**).\n\n"
+        "Document:\n{text}"
+    ),
+    # Detailed: 600+ word comprehensive section-by-section analysis
+    "detailed": (
+        "You are a senior research analyst. Write a comprehensive, section-by-section analysis of the document below. "
+        "For every distinct topic or section in the document, write a dedicated heading and at least 2-3 detailed paragraphs. "
+        "Include all key data points, names, dates, and specific details mentioned. "
+        "STRICT RULE: Your response must be AT LEAST 600 words. Do not truncate or skip any section.\n\n"
+        "Document:\n{text}"
+    ),
+    # Aliases for backward compatibility
+    "short": (
+        "Summarize the following document in 3-5 bullet points focusing only on the most critical takeaways. "
+        "Keep it under 120 words total:\n\n{text}"
+    ),
+    "long": (
+        "Provide an extremely detailed, section-by-section summary (at least 600 words) of the following document. "
+        "Extract all important data, dates, and names:\n\n{text}"
+    ),
 }
 
 def generate_summary(text: str, length: str = "medium") -> str:
